@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Gumdrop Gauntlet — A 100-Level Candy Obby</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chewy&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cocoa:#2a1220; --cocoa-2:#47203a; --cocoa-3:#5c2a4a;
+    --raspberry:#ff3f6e; --raspberry-dark:#c91f4d;
+    --caramel:#f5a83f; --caramel-dark:#c67e1f;
+    --sugar:#fff6ea; --mint:#6fe3b4; --mint-dark:#2f9e70;
+    --font-display:'Chewy','Comic Sans MS',cursive;
+    --font-body:'Quicksand',-apple-system,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%; overflow:hidden;
+    background:var(--cocoa); color:var(--sugar);
+    font-family:var(--font-body); -webkit-tap-highlight-color:transparent;
+    overscroll-behavior:none; user-select:none; -webkit-user-select:none;
+  }
+  #app{ position:relative; width:100vw; height:100vh; height:100dvh; overflow:hidden; }
+  #game{ position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+
+  button{ font-family:var(--font-body); border:none; cursor:pointer; }
+  button:focus-visible, .touch-btn:focus-visible{ outline:3px solid var(--mint); outline-offset:2px; }
+
+  /* ---------- signature shape: wrapped-candy panel (twisted foil ends) ---------- */
+  .candy-wrap{
+    position:relative; display:inline-flex; align-items:center; justify-content:center;
+    border-radius:999px; padding:.6em 1.5em;
+  }
+  .candy-wrap::before,.candy-wrap::after{
+    content:''; position:absolute; top:50%; width:0; height:0;
+    border-top:9px solid transparent; border-bottom:9px solid transparent;
+    transform:translateY(-50%);
+  }
+  .candy-wrap::before{ left:-7px; }
+  .candy-wrap::after{ right:-7px; }
+  .candy-wrap--raspberry{ background:linear-gradient(135deg,var(--raspberry),#ff6f91); box-shadow:0 4px 0 var(--raspberry-dark), 0 8px 16px rgba(0,0,0,.35); color:var(--sugar); }
+  .candy-wrap--raspberry::before{ border-right:9px solid var(--raspberry-dark); }
+  .candy-wrap--raspberry::after{ border-left:9px solid var(--raspberry-dark); }
+  .candy-wrap--caramel{ background:linear-gradient(135deg,var(--caramel),#ffcb6b); box-shadow:0 4px 0 var(--caramel-dark), 0 8px 16px rgba(0,0,0,.3); color:#4a2c05; }
+  .candy-wrap--caramel::before{ border-right:9px solid var(--caramel-dark); }
+  .candy-wrap--caramel::after{ border-left:9px solid var(--caramel-dark); }
+  .candy-wrap--cocoa{ background:linear-gradient(135deg,var(--cocoa-3),var(--cocoa-2)); box-shadow:0 4px 0 #1a0a15, 0 10px 26px rgba(0,0,0,.5); color:var(--sugar); border:2px solid rgba(255,255,255,.08); }
+  .candy-wrap--cocoa::before{ border-right:9px solid var(--cocoa-2); }
+  .candy-wrap--cocoa::after{ border-left:9px solid var(--cocoa-2); }
+  .candy-wrap--mint{ background:linear-gradient(135deg,var(--mint),#8ff0c8); box-shadow:0 4px 0 var(--mint-dark), 0 8px 16px rgba(0,0,0,.3); color:#0d3d29; }
+  .candy-wrap--mint::before{ border-right:9px solid var(--mint-dark); }
+  .candy-wrap--mint::after{ border-left:9px solid var(--mint-dark); }
+
+  .btn{ font-family:var(--font-body); font-weight:700; font-size:1.02rem; letter-spacing:.01em; transition:transform .12s ease, box-shadow .12s ease; }
+  .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.3) !important; }
+  .btn-ghost{ background:rgba(255,255,255,.08); color:var(--sugar); border:2px solid rgba(255,255,255,.18); border-radius:999px; padding:.6em 1.4em; font-weight:600; }
+  .btn-ghost:hover{ background:rgba(255,255,255,.14); }
+
+  .hidden{ display:none !important; }
+
+  /* ---------- screens ---------- */
+  .screen{
+    position:absolute; inset:0; z-index:40; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; padding:24px;
+    background:radial-gradient(ellipse at 50% 20%, rgba(92,42,74,.55), rgba(13,5,10,.92) 72%);
+    backdrop-filter:blur(2px);
+  }
+  .title{
+    font-family:var(--font-display); font-size:clamp(2.3rem,9vw,4.6rem); line-height:1;
+    margin:0 0 .1em; letter-spacing:.02em;
+    background:linear-gradient(180deg,#fff 0%,#ffd6e8 38%,var(--raspberry) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 5px 0 var(--raspberry-dark), 0 14px 24px rgba(0,0,0,.4);
+    -webkit-text-stroke:1.5px rgba(255,255,255,.35);
+  }
+  .subtitle{ font-weight:700; font-size:clamp(1rem,3vw,1.3rem); color:var(--caramel); margin:0 0 .3em; }
+  .tagline{ font-weight:500; opacity:.75; max-width:38em; margin:0 0 1.6em; font-size:.95rem; }
+  .legend{ display:flex; flex-wrap:wrap; gap:.5em 1.2em; justify-content:center; font-size:.82rem; opacity:.8; margin:1.6em 0 .4em; font-weight:600; }
+  .legend kbd{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2); border-radius:6px; padding:.15em .5em; font-family:var(--font-body); font-weight:700; }
+  .menu-actions{ display:flex; flex-direction:column; gap:.7em; margin-top:1.1em; align-items:center; }
+  .continue-level{ font-weight:800; }
+  .footnote{ margin-top:1.6em; font-size:.72rem; opacity:.55; max-width:32em; }
+  .mp-panel{ width:min(520px,92vw); display:flex; flex-direction:column; align-items:center; }
+  .mp-room-code{ font-family:var(--font-display); font-size:2.5rem; letter-spacing:.16em; color:var(--caramel); margin:.15em 0 .35em; }
+  .mp-status{ font-size:.82rem; opacity:.75; min-height:1.4em; margin:.15em 0 .8em; }
+  .mp-row{ display:flex; gap:.55em; width:min(360px,88vw); margin:.35em 0; }
+  .mp-row input{ flex:1; min-width:0; padding:.72em 1em; border-radius:999px; border:2px solid rgba(255,255,255,.2); background:rgba(255,255,255,.09); color:#fff; font:700 1rem var(--font-body); text-align:center; text-transform:uppercase; outline:none; }
+  .mp-row input:focus{ border-color:var(--mint); }
+  .mp-players{ width:min(360px,88vw); max-height:180px; overflow:auto; margin:.5em 0; padding:.5em; border-radius:16px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.12); }
+  .mp-player{ display:flex; align-items:center; justify-content:space-between; padding:.42em .65em; font-size:.82rem; }
+  .mp-player + .mp-player{ border-top:1px solid rgba(255,255,255,.08); }
+  .mp-player-dot{ width:10px; height:10px; border-radius:50%; background:var(--mint); display:inline-block; margin-right:.5em; }
+  .mp-room-actions{ display:flex; flex-wrap:wrap; justify-content:center; gap:.65em; margin-top:.8em; }
+  .mp-hint{ font-size:.72rem; opacity:.55; max-width:34em; margin-top:.9em; }
+  .mp-badge{ font-weight:800; font-size:.76rem; background:rgba(111,227,180,.15); border:1px solid rgba(111,227,180,.35); padding:.38em .75em; border-radius:999px; white-space:nowrap; color:#fff6ea; }
+  .level-select-panel{ width:min(720px,94vw); max-height:min(720px,82vh); display:flex; flex-direction:column; }
+  .level-select-panel .title{ font-size:clamp(2rem,6vw,3.3rem); }
+  .level-select-copy{ margin:.1em 0 1em; font-size:.86rem; opacity:.75; }
+  .level-grid{ display:grid; grid-template-columns:repeat(10,minmax(38px,1fr)); gap:7px; overflow:auto; padding:4px 7px 8px; }
+  .level-choice{ aspect-ratio:1; min-width:0; border-radius:12px; font:800 .78rem var(--font-body); background:rgba(255,255,255,.08); color:rgba(255,246,234,.4); border:1px solid rgba(255,255,255,.12); cursor:not-allowed; }
+  .level-choice.unlocked{ background:linear-gradient(145deg,#ff7aac,#e83670); color:#fff; border-color:#ffd4e5; box-shadow:0 3px 0 #a91c48; cursor:pointer; }
+  .level-choice.unlocked:hover{ transform:translateY(-2px); filter:brightness(1.12); }
+  .level-choice.current{ background:linear-gradient(145deg,#ffc95b,#e98b25); color:#4a2c05; }
+  .level-choice.locked::after{ content:'🔒'; display:block; font-size:.55rem; opacity:.75; }
+  .level-select-actions{ margin-top:1.1em; }
+
+  #victoryScreen .title{ font-size:clamp(2rem,7vw,3.6rem); }
+  .victory-stats{ display:flex; gap:1.4em; margin:1em 0 1.6em; }
+  .victory-stat{ text-align:center; }
+  .victory-stat .num{ font-family:var(--font-display); font-size:2rem; color:var(--mint); display:block; }
+  .victory-stat .lbl{ font-size:.75rem; opacity:.75; text-transform:uppercase; letter-spacing:.06em; }
+
+  /* ---------- HUD ---------- */
+  #hud{
+    position:absolute; top:0; left:0; right:0; z-index:30;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:12px 14px; padding-top:max(12px, env(safe-area-inset-top));
+    pointer-events:none;
+  }
+  #hud > *{ pointer-events:auto; }
+  .hud-left{ display:flex; align-items:center; gap:10px; }
+  .level-badge{ font-family:var(--font-display); font-size:1.05rem; padding:.4em 1.1em; white-space:nowrap; }
+  .level-badge .of{ font-size:.7em; opacity:.85; margin-left:.15em; }
+  .zone-label{ font-weight:700; font-size:.8rem; color:var(--sugar); background:rgba(0,0,0,.35); padding:.35em .8em; border-radius:999px; white-space:nowrap; max-width:36vw; overflow:hidden; text-overflow:ellipsis; }
+  .hud-progress{ flex:1; max-width:280px; display:none; }
+  @media (min-width:640px){ .hud-progress{ display:block; } }
+  .progress-track{ height:10px; border-radius:999px; background:rgba(0,0,0,.35); overflow:hidden; border:1px solid rgba(255,255,255,.15); }
+  .progress-fill{ height:100%; width:1%; border-radius:999px; transition:width .4s ease;
+    background:repeating-linear-gradient(135deg,var(--raspberry) 0 10px, #ff6f91 10px 20px); }
+  .hud-right{ display:flex; align-items:center; gap:8px; }
+  .death-counter{ font-weight:700; font-size:.85rem; background:rgba(0,0,0,.35); padding:.35em .7em; border-radius:999px; white-space:nowrap; }
+  .power-badge{ font-weight:800; font-size:.76rem; background:rgba(37,15,47,.62); border:1px solid rgba(255,255,255,.22); padding:.38em .75em; border-radius:999px; white-space:nowrap; color:#fff6ea; }
+  .icon-btn{ width:38px; height:38px; border-radius:50%; background:rgba(0,0,0,.35); color:var(--sugar); font-size:1rem; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.15); }
+  .icon-btn:active{ transform:scale(.92); }
+
+  /* ---------- zone banner ---------- */
+  .zone-banner{ position:absolute; top:16%; left:50%; transform:translate(-50%,-24px); opacity:0; transition:transform .45s cubic-bezier(.2,.9,.3,1.2), opacity .35s ease; z-index:35; pointer-events:none; }
+  .zone-banner.show{ transform:translate(-50%,0); opacity:1; }
+  .zone-banner-inner{ flex-direction:column; padding:.9em 1.8em; min-width:220px; }
+  .zone-banner-eyebrow{ font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; opacity:.7; font-weight:700; }
+  .zone-banner-name{ font-family:var(--font-display); font-size:1.5rem; color:var(--caramel); margin:.05em 0; }
+  .zone-banner-label{ font-size:.78rem; font-weight:700; color:var(--mint); text-transform:uppercase; letter-spacing:.05em; }
+
+  /* ---------- death flash ---------- */
+  .death-flash{ position:absolute; top:28%; left:50%; transform:translate(-50%,-10px); opacity:0; transition:opacity .25s ease, transform .25s ease; z-index:35; pointer-events:none; }
+  .death-flash.show{ opacity:1; transform:translate(-50%,0); }
+  .death-flash span{ font-weight:800; font-size:1rem; background:rgba(10,4,8,.7); padding:.5em 1.1em; border-radius:999px; border:1px solid rgba(255,63,110,.5); }
+
+  /* ---------- pause screen list ---------- */
+  .pause-actions{ display:flex; flex-direction:column; gap:.6em; margin-top:1em; width:min(280px,80vw); }
+
+  /* ---------- touch controls ---------- */
+  .touch-controls{ display:none; position:absolute; left:0; right:0; bottom:0; z-index:25; padding:0 18px max(18px, env(safe-area-inset-bottom)); align-items:flex-end; justify-content:space-between; pointer-events:none; }
+  body.touch .touch-controls{ display:flex; }
+  .touch-move{ display:flex; gap:12px; pointer-events:auto; }
+  .touch-btn{ width:60px; height:60px; border-radius:50%; background:rgba(20,8,16,.55); border:2px solid rgba(255,255,255,.25); color:var(--sugar); font-size:1.4rem; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(3px); }
+  .touch-btn:active{ background:rgba(255,63,110,.55); transform:scale(.94); }
+  .touch-jump{ width:74px; height:74px; font-size:1.7rem; pointer-events:auto; background:rgba(255,63,110,.4); border-color:rgba(255,255,255,.35); }
+  .sprite-picker{ margin-top:1.3em; }
+  .sprite-picker label{ display:block; font-size:.73rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; opacity:.75; margin-bottom:.5em; }
+  .sprite-options{ display:flex; justify-content:center; gap:.48em; flex-wrap:wrap; }
+  .sprite-choice{ width:48px; height:48px; border-radius:15px; border:2px solid rgba(255,255,255,.22); background:rgba(255,255,255,.1); color:white; font-size:1.35rem; transition:transform .15s ease, border-color .15s ease, background .15s ease; }
+  .sprite-choice:hover,.sprite-choice.selected{ transform:translateY(-3px); border-color:var(--mint); background:rgba(111,227,180,.22); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <div id="hud" class="hidden">
+    <div class="hud-left">
+      <div class="level-badge candy-wrap candy-wrap--raspberry"><span id="levelNum">1</span><span class="of">/100</span></div>
+      <div class="zone-label" id="zoneLabel">Gumdrop Garden</div>
+    </div>
+    <div class="hud-progress"><div class="progress-track"><div class="progress-fill" id="progressFill"></div></div></div>
+    <div class="hud-right">
+      <div class="power-badge" id="powerBadge">No power-up</div><div class="mp-badge hidden" id="mpBadge">👥 Solo</div>
+      <div class="death-counter">💀 <span id="deathCount">0</span></div>
+      <button class="icon-btn" id="muteBtn" aria-label="Mute sound">🔊</button>
+      <button class="icon-btn" id="pauseBtn" aria-label="Pause">❚❚</button>
+    </div>
+  </div>
+
+  <div id="zoneBanner" class="zone-banner hidden">
+    <div class="zone-banner-inner candy-wrap candy-wrap--cocoa" style="display:flex;">
+      <div class="zone-banner-eyebrow">World <span id="zoneBannerNum"></span> of 10</div>
+      <div class="zone-banner-name" id="zoneBannerName"></div>
+      <div class="zone-banner-label" id="zoneBannerLabel"></div>
+    </div>
+  </div>
+
+  <div id="deathFlash" class="death-flash hidden"><span id="deathFlashText"></span></div>
+
+  <div id="startScreen" class="screen">
+    <div class="title">Gumdrop Gauntlet</div>
+    <div class="subtitle">A 100-Level Candy Obby</div>
+    <div class="tagline">Ten candy worlds, each sweeter and stickier than the last. Grab each glowing candy power-up — Moon Mints bend gravity, while Double Pops add an air jump.</div>
+    <div class="legend">
+      <span><kbd>◀</kbd> <kbd>▶</kbd> or <kbd>A</kbd> <kbd>D</kbd> move</span>
+      <span><kbd>Space</kbd> / <kbd>▲</kbd> jump</span>
+      <span><kbd>R</kbd> restart level</span>
+      <span><kbd>Esc</kbd> pause</span>
+    </div>
+    <div class="menu-actions">
+      <button id="startBtn" class="btn candy-wrap candy-wrap--raspberry" style="font-size:1.15rem;">Start Game</button>
+      <button id="continueBtn" class="btn candy-wrap candy-wrap--caramel hidden">Continue — <span class="continue-level">Level 1</span></button>
+      <button id="levelSelectBtn" class="btn btn-ghost">Choose a completed level</button>
+      <button id="multiplayerBtn" class="btn btn-ghost">👥 Online Multiplayer</button>
+    </div>
+    <div class="sprite-picker" aria-label="Choose your player sprite">
+      <label>Choose your candy sprite</label>
+      <div class="sprite-options">
+        <button class="sprite-choice selected" data-sprite="gumdrop" aria-label="Gumdrop sprite">🍬</button>
+        <button class="sprite-choice" data-sprite="marshmallow" aria-label="Marshmallow sprite">☁️</button>
+        <button class="sprite-choice" data-sprite="lollipop" aria-label="Lollipop sprite">🍭</button>
+        <button class="sprite-choice" data-sprite="jelly" aria-label="Jelly sprite">🧸</button>
+      </div>
+    </div>
+    <div class="footnote">Some levels hide a power-up before an obstacle that needs it. Powers reset between levels, and progress autosaves automatically.</div>
+  </div>
+
+  <div id="multiplayerScreen" class="screen hidden">
+    <div class="mp-panel">
+      <div class="title" style="font-size:clamp(2rem,7vw,3.6rem);">Candy Co‑op</div>
+      <div class="subtitle">Play the gauntlet together</div>
+      <p class="tagline">Create a room and share the code, or join a friend's room. Everyone sees everyone else running, jumping, and riding the spinning candy platforms.</p>
+      <div id="mpRoomCode" class="mp-room-code hidden">------</div>
+      <div id="mpStatus" class="mp-status">Not connected</div>
+      <div class="mp-row">
+        <input id="mpRoomInput" maxlength="6" placeholder="ROOM CODE" aria-label="Room code">
+        <button id="mpJoinBtn" class="btn candy-wrap candy-wrap--caramel">Join</button>
+      </div>
+      <div class="mp-room-actions">
+        <button id="mpCreateBtn" class="btn candy-wrap candy-wrap--raspberry">Create Room</button>
+        <button id="mpStartBtn" class="btn candy-wrap candy-wrap--mint hidden">Start Co‑op</button>
+        <button id="mpLeaveBtn" class="btn btn-ghost">Back</button>
+      </div>
+      <div id="mpPlayers" class="mp-players hidden"></div>
+      <div class="mp-hint">For online play, this game needs the included WebSocket server running on a public host. The HTML can still be played solo without it.</div>
+    </div>
+  </div>
+
+  <div id="levelSelectScreen" class="screen hidden">
+    <div class="level-select-panel">
+      <div class="title">Candy Map</div>
+      <div class="subtitle">Replay Your Victories</div>
+      <p class="level-select-copy" id="levelSelectCopy">Complete levels to unlock them for replay.</p>
+      <div class="level-grid" id="levelGrid" aria-label="Completed level selector"></div>
+      <div class="level-select-actions"><button id="closeLevelSelectBtn" class="btn btn-ghost">Back</button></div>
+    </div>
+  </div>
+
+  <div id="pauseScreen" class="screen hidden">
+    <div class="title" style="font-size:2.2rem;">Paused</div>
+    <div class="pause-actions">
+      <button id="resumeBtn" class="btn candy-wrap candy-wrap--raspberry">Resume</button>
+      <button id="restartLevelBtn" class="btn btn-ghost">Restart Level</button>
+      <button id="quitBtn" class="btn btn-ghost">Quit to Menu</button>
+    </div>
+  </div>
+
+  <div id="victoryScreen" class="screen hidden">
+    <div class="title">The Gauntlet is Yours!</div>
+    <div class="subtitle">All 10 candy worlds. All 100 levels. Sweet victory.</div>
+    <div class="victory-stats">
+      <div class="victory-stat"><span class="num" id="victoryDeaths">0</span><span class="lbl">Deaths</span></div>
+      <div class="victory-stat"><span class="num">💯</span><span class="lbl">Levels Cleared</span></div>
+    </div>
+    <button id="playAgainBtn" class="btn candy-wrap candy-wrap--mint">Play Again</button>
+  </div>
+
+  <div id="touchControls" class="touch-controls">
+    <div class="touch-move">
+      <button id="btnLeft" class="touch-btn" aria-label="Move left">◀</button>
+      <button id="btnRight" class="touch-btn" aria-label="Move right">▶</button>
+    </div>
+    <button id="btnJump" class="touch-btn touch-jump" aria-label="Jump">⤴</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   LEVEL GENERATION — physics-verified, deterministic (same 100 levels every
+   run). Every gap is derived FROM the jump physics itself (see reach()), so
+   every hop across all 100 levels is guaranteed reachable by construction.
+   ========================================================================= */
+// ===== PHYSICS CONSTANTS (units: px per frame, 60fps baseline) =====
+const GRAVITY = 0.55;
+const JUMP_VELOCITY = -12.5;
+const MOVE_SPEED = 4.3;
+const MAX_FALL = 15;
+const PLAYER_W = 26;
+const PLAYER_H = 32;
+
+const MAX_SAFE_UP = -95;   // a platform can be at most this much *higher* (negative y) than takeoff
+const MAX_SAFE_DOWN = 130; // a platform can be at most this much *lower* (positive y) than takeoff
+const MIN_GAP = 20;        // always leave a visible, real gap
+const MAX_GAP = 210;       // sanity ceiling on derived gaps
+const AIR_ACCEL = 0.52;    // must match the runtime engine's air acceleration exactly
+
+// ===== SEEDED RNG (mulberry32) =====
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function randRange(rng, min, max) { return min + rng() * (max - min); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+// Physics-accurate landing distance: simulates a full-commitment jump (max speed,
+// held the entire flight) and returns the horizontal distance covered by the moment
+// the arc, falling AFTER its apex, first reaches height difference dy (positive=down).
+// This EXACTLY mirrors the runtime player physics update (vy+=G; y+=vy each frame),
+// so any platform placed at this distance is guaranteed reachable by construction.
+function reach(dy) {
+  let vy = JUMP_VELOCITY, y = 0, x = 0, pastApex = false;
+  for (let i = 0; i < 500; i++) {
+    vy += GRAVITY; y += vy; x += MOVE_SPEED;
+    if (vy >= 0) pastApex = true;
+    if (pastApex && y >= dy) return x;
+  }
+  return null; // unreachable height (shouldn't happen given MAX_SAFE_UP clamp)
+}
+
+// Places a target platform of width w so a full-commitment jump from the takeoff
+// edge lands within it (biased near its center, with organic jitter). Returns the
+// gap (dx) from the takeoff edge to the platform's near edge.
+function placeHop(dy, w, rng) {
+  const r = reach(dy);
+  const rr = r === null ? 90 : r; // defensive fallback; MAX_SAFE_UP keeps this from triggering
+  const centerBias = randRange(rng, 0.4, 0.6);
+  const dx = clamp(rr - w * centerBias, MIN_GAP, MAX_GAP);
+  return dx;
+}
+// Landing distance assuming a STANDING takeoff (0 initial speed, ramping up via air
+// accel) instead of an already-at-full-speed run. This is the realistic case for
+// jumping onto or off of a moving/blinking platform, where a player typically has to
+// stop and time the jump rather than arrive already at a run. It's always a fixed
+// ~15-16px short of reach(dy), since the deficit is purely the accel ramp-up cost and
+// doesn't depend on dy (vertical and horizontal motion are decoupled in this model).
+function reachStanding(dy) {
+  let vy = JUMP_VELOCITY, y = 0, x = 0, vx = 0, pastApex = false;
+  for (let i = 0; i < 500; i++) {
+    vy += GRAVITY; y += vy;
+    vx += clamp(MOVE_SPEED - vx, -AIR_ACCEL, AIR_ACCEL); x += vx;
+    if (vy >= 0) pastApex = true;
+    if (pastApex && y >= dy) return x;
+  }
+  return null;
+}
+// For mover/blinker entry & exit hops: centers the STANDING-reach point in the platform
+// (guaranteeing it's reachable with zero run-up), using a lower centerBias so the
+// platform's far portion stays large — that's what keeps a running-speed jump from
+// sailing past the far edge (paired with the wider floor used for these platforms).
+function placeHopStanding(dy, w, rng) {
+  const r = reachStanding(dy);
+  const rr = r === null ? 75 : r;
+  const centerBias = randRange(rng, 0.32, 0.46);
+  return clamp(rr - w * centerBias, MIN_GAP, MAX_GAP);
+}
+
+// Candy powers deliberately extend the normal move set. Their special segments
+// are placed beyond the ordinary jump envelope, making the pickup mandatory.
+function reachWithGravity(dy, gravity) {
+  let vy = JUMP_VELOCITY, y = 0, x = 0, pastApex = false;
+  for (let i = 0; i < 700; i++) {
+    vy += gravity; y += vy; x += MOVE_SPEED;
+    if (vy >= 0) pastApex = true;
+    if (pastApex && y >= dy) return x;
+  }
+  return null;
+}
+function powerForLevel(levelNum) {
+  // Power stages are deliberately separated by ordinary stages. Loading any
+  // ordinary stage clears the power, so powers never leak into the next level.
+  const slot = (levelNum - 1) % 5;
+  if (slot === 1) return 'lowGravity';
+  if (slot === 3) return 'doubleJump';
+  return null;
+}
+const POWER_INFO = {
+  lowGravity: { name: 'Moon Mint', icon: '☾', color: '#aef4ff', hint: 'Low gravity' },
+  doubleJump: { name: 'Double Pop', icon: '✦', color: '#ffd45f', hint: 'Double jump' },
+};
+// Temporary QA switch: lets the player select every level for final-zone testing.
+// Set to false before release to restore completion-only level selection.
+const TEST_UNLOCK_ALL_LEVELS = true;
+
+// ===== WORLD (TIER) DEFINITIONS: 10 worlds x 10 levels =====
+// platW is the PRIMARY difficulty lever: narrower platforms leave less margin around
+// the physics-derived landing point. dy is height variance. Gaps are always derived
+// from these via placeHop(), so they're feasible by construction.
+const TIERS = [
+  { name: "Gumdrop Garden", label: "Beginner", key: "gumdrop",
+    bg: ["#ffd1ec", "#ffeaf8"], plat: "#ff8fc7", plat2: "#ff6fb8", accent: "#ffffff",
+    platW: [118, 165], dy: [-20, 28], segs: [4, 5],
+    moverChance: 0, moverPeriod: [125, 165], hazardChance: 0.0,
+    blinkChance: 0, blinkPeriod: [135, 175], blinkVisible: [0.6, 0.66],
+    precisionChance: 0.12, swingChance: 0, gauntletChance: 0 },
+
+  { name: "Cotton Candy Clouds", label: "Easy", key: "cotton",
+    bg: ["#bfe3ff", "#ffe0f7"], plat: "#7fc8ff", plat2: "#5fb3f5", accent: "#ffffff",
+    platW: [100, 142], dy: [-28, 36], segs: [5, 6],
+    moverChance: 0.14, moverPeriod: [120, 160], hazardChance: 0.22,
+    blinkChance: 0, blinkPeriod: [128, 168], blinkVisible: [0.58, 0.63],
+    precisionChance: 0.15, swingChance: 0, gauntletChance: 0 },
+
+  { name: "Chocolate River", label: "Medium", key: "choc",
+    bg: ["#6b4128", "#c9925a"], plat: "#8a5a34", plat2: "#6e4526", accent: "#f4c98a",
+    platW: [86, 126], dy: [-34, 42], segs: [5, 6],
+    moverChance: 0.26, moverPeriod: [114, 154], hazardChance: 0.32,
+    blinkChance: 0, blinkPeriod: [122, 162], blinkVisible: [0.55, 0.6],
+    precisionChance: 0.18, swingChance: 0, gauntletChance: 0 },
+
+  { name: "Candy Cane Forest", label: "Tricky", key: "cane",
+    bg: ["#ffe3e3", "#ffffff"], plat: "#ff5b5b", plat2: "#e23c3c", accent: "#ffffff",
+    platW: [74, 110], dy: [-40, 48], segs: [6, 7],
+    moverChance: 0.32, moverPeriod: [108, 148], hazardChance: 0.38,
+    blinkChance: 0.18, blinkPeriod: [128, 168], blinkVisible: [0.54, 0.6],
+    precisionChance: 0.2, swingChance: 0, gauntletChance: 0 },
+
+  { name: "Sour Gummy Swamp", label: "Hard", key: "sour",
+    bg: ["#d8ff9e", "#94cf3f"], plat: "#8bc34a", plat2: "#6ea637", accent: "#f0ffd0",
+    platW: [64, 98], dy: [-44, 54], segs: [6, 7],
+    moverChance: 0.38, moverPeriod: [102, 142], hazardChance: 0.44,
+    blinkChance: 0.25, blinkPeriod: [120, 158], blinkVisible: [0.5, 0.55],
+    precisionChance: 0.25, swingChance: 0, gauntletChance: 0 },
+
+  { name: "Licorice Labyrinth", label: "Very Hard", key: "licorice",
+    bg: ["#241a1f", "#5c2a3a"], plat: "#332027", plat2: "#1c1216", accent: "#ff4d8d",
+    platW: [56, 86], dy: [-48, 58], segs: [6, 7],
+    moverChance: 0.44, moverPeriod: [98, 136], hazardChance: 0.5,
+    blinkChance: 0.3, blinkPeriod: [114, 150], blinkVisible: [0.46, 0.51],
+    precisionChance: 0.3, swingChance: 0.16, gauntletChance: 0 },
+
+  { name: "Jawbreaker Jungle", label: "Expert", key: "jaw",
+    bg: ["#3a1c5c", "#7b3fb0"], plat: "#9b5de5", plat2: "#7a3fc4", accent: "#ffd6ff",
+    platW: [50, 78], dy: [-52, 62], segs: [7, 8],
+    moverChance: 0.48, moverPeriod: [94, 130], hazardChance: 0.55,
+    blinkChance: 0.34, blinkPeriod: [108, 142], blinkVisible: [0.43, 0.48],
+    precisionChance: 0.33, swingChance: 0.24, gauntletChance: 0.1 },
+
+  { name: "Caramel Chasm", label: "Master", key: "caramel",
+    bg: ["#3f2000", "#a5651b"], plat: "#c9862f", plat2: "#a5691f", accent: "#ffe0a8",
+    platW: [44, 68], dy: [-56, 66], segs: [7, 8],
+    moverChance: 0.52, moverPeriod: [90, 124], hazardChance: 0.6,
+    blinkChance: 0.38, blinkPeriod: [102, 134], blinkVisible: [0.4, 0.45],
+    precisionChance: 0.36, swingChance: 0.3, gauntletChance: 0.18 },
+
+  { name: "Peppermint Peak", label: "Insane", key: "pepper",
+    bg: ["#1a1a2e", "#4a1a3a"], plat: "#ff3b6e", plat2: "#d61b4d", accent: "#ffffff",
+    platW: [40, 60], dy: [-60, 70], segs: [8, 9],
+    moverChance: 0.56, moverPeriod: [87, 120], hazardChance: 0.64,
+    blinkChance: 0.42, blinkPeriod: [98, 128], blinkVisible: [0.37, 0.42],
+    precisionChance: 0.4, swingChance: 0.34, gauntletChance: 0.24 },
+
+  { name: "The Gummy Gauntlet", label: "LEGENDARY", key: "legend",
+    bg: ["#0d0510", "#3a0d2e"], plat: "#ff0844", plat2: "#c40636", accent: "#ffd700",
+    platW: [36, 54], dy: [-64, 74], segs: [8, 9],
+    moverChance: 0.6, moverPeriod: [84, 116], hazardChance: 0.7,
+    blinkChance: 0.46, blinkPeriod: [94, 122], blinkVisible: [0.34, 0.39],
+    precisionChance: 0.44, swingChance: 0.38, gauntletChance: 0.32 },
+];
+
+// ===== SEGMENT GENERATORS =====
+// Each takes (cursor{x,y}, cfg, rng, tScale) and returns:
+// { platforms, movers, blinkers, hazards, hops, endX, endY, minY, maxY }
+// `hops` is the list of {dx,dy,w} jumps a player must make — used for verification.
+
+function rollDy(cfg, tScale, rng, mult) {
+  const m = mult === undefined ? 1 : mult;
+  const scale = (0.55 + tScale * 0.45) * m;
+  return clamp(randRange(rng, cfg.dy[0] * scale, cfg.dy[1] * scale), MAX_SAFE_UP, MAX_SAFE_DOWN);
+}
+function rollPlatW(cfg, tScale, rng, floor) {
+  const f = floor === undefined ? 30 : floor;
+  const v = lerp(cfg.platW[1], cfg.platW[0], tScale * 0.55 + rng() * 0.45); // narrower as tScale grows
+  return clamp(v, f, 220);
+}
+
+function segGap(cursor, cfg, rng, tScale) {
+  const dy = rollDy(cfg, tScale, rng);
+  const w = rollPlatW(cfg, tScale, rng, 34);
+  const dx = placeHop(dy, w, rng);
+  const nx = cursor.x + dx, ny = cursor.y + dy;
+  const hazards = [];
+  if (cfg.hazardChance > 0 && rng() < cfg.hazardChance) {
+    hazards.push({ x: cursor.x, y: Math.max(cursor.y, ny) + 30, w: dx, h: 260, kind: "spike" });
+  }
+  return {
+    platforms: [{ x: nx, y: ny, w, h: 24, kind: "static" }],
+    hops: [{ dx, dy, w }],
+    hazards,
+    endX: nx + w, endY: ny, minY: ny, maxY: ny,
+  };
+}
+
+function segStairs(cursor, cfg, rng, tScale) {
+  const steps = 2 + (rng() < 0.5 ? 0 : 1);
+  const dir = rng() < 0.5 ? -1 : 1; // -1 = climbing up, 1 = descending
+  let x = cursor.x, y = cursor.y;
+  const platforms = [], hops = [];
+  let minY = y, maxY = y;
+  for (let i = 0; i < steps; i++) {
+    const dyMag = Math.abs(rollDy(cfg, tScale, rng, 0.6)) + 10;
+    const dy = clamp(dir * dyMag, MAX_SAFE_UP, MAX_SAFE_DOWN);
+    const w = rollPlatW(cfg, tScale, rng, 32) * 0.92;
+    const dx = placeHop(dy, w, rng);
+    const nx = x + dx, ny = y + dy;
+    platforms.push({ x: nx, y: ny, w, h: 22, kind: "static" });
+    hops.push({ dx, dy, w });
+    x = nx + w; y = ny;
+    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+  }
+  return { platforms, hops, hazards: [], endX: x, endY: y, minY, maxY };
+}
+
+function segPrecision(cursor, cfg, rng, tScale) {
+  const count = 3;
+  let x = cursor.x, y = cursor.y;
+  const platforms = [], hops = [];
+  let minY = y, maxY = y;
+  for (let i = 0; i < count; i++) {
+    const dy = rollDy(cfg, tScale, rng, 0.4);
+    const w = rollPlatW(cfg, tScale, rng, 28) * 0.8;
+    const dx = placeHop(dy, w, rng);
+    const nx = x + dx, ny = y + dy;
+    platforms.push({ x: nx, y: ny, w, h: 20, kind: "static" });
+    hops.push({ dx, dy, w });
+    x = nx + w; y = ny;
+    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+  }
+  return { platforms, hops, hazards: [], endX: x, endY: y, minY, maxY };
+}
+
+function segMoverGeneric(cursor, cfg, rng, tScale, isSwing) {
+  const dyA = rollDy(cfg, tScale, rng, 0.65);
+  // Movers get a wider floor than static platforms: a player realistically has to stop
+  // and time the jump onto/off of one (see placeHopStanding), so the timing itself is
+  // the challenge — the platform doesn't also need to be pixel-narrow to stay hard.
+  const mw = rollPlatW(cfg, tScale, rng, 44);
+  const dxA = placeHopStanding(dyA, mw, rng);
+  const x0 = cursor.x + dxA, y0 = cursor.y + dyA;
+  const travel = randRange(rng, 55, 95) + tScale * randRange(rng, 40, 90);
+  const x1 = x0 + travel, y1 = y0;
+  const period = Math.round(randRange(rng, cfg.moverPeriod[0], cfg.moverPeriod[1]));
+  const phase = Math.floor(rng() * period);
+  const mover = {
+    x0, y0, x1, y1, w: mw, h: 18, period, phase,
+    kind: isSwing ? "swing" : "mover",
+    wobbleAmp: isSwing ? randRange(rng, 8, 18) : 0,
+  };
+  const dyB = rollDy(cfg, tScale, rng, 0.65);
+  const nw = rollPlatW(cfg, tScale, rng, 38);
+  const dxB = placeHopStanding(dyB, nw, rng);
+  const nx = x1 + mw + dxB, ny = y1 + dyB;
+  return {
+    platforms: [{ x: nx, y: ny, w: nw, h: 24, kind: "static" }],
+    movers: [mover],
+    hops: [{ dx: dxA, dy: dyA, w: mw }, { dx: dxB, dy: dyB, w: nw }],
+    hazards: [],
+    endX: nx + nw, endY: ny, minY: Math.min(cursor.y, y0, ny), maxY: Math.max(cursor.y, y0, ny),
+  };
+}
+function segMover(cursor, cfg, rng, tScale) { return segMoverGeneric(cursor, cfg, rng, tScale, false); }
+function segSwing(cursor, cfg, rng, tScale) { return segMoverGeneric(cursor, cfg, rng, tScale, true); }
+
+// A horizontal candy platform orbits a small central hub, inspired by the
+// spinning-platform reference. Players can wait for the right position, ride
+// the arc, then jump to the exit ledge.
+function segSpinner(cursor, cfg, rng, tScale) {
+  // Three identical, oversized candy platforms orbit the same hub at 120°
+  // intervals. The player can wait for one to arrive at the entry side,
+  // ride the rotation, then jump the intentionally large-but-reachable exit gap.
+  const count = 3;
+  const radius = 84;
+  const w = 150;
+  const h = 22;
+  const entryGap = 125;
+  const exitGap = 135;
+  const cx = cursor.x + entryGap + radius + w / 2;
+  const cy = cursor.y;
+  const period = Math.round(randRange(rng, 178, 205));
+  const phase = Math.floor(rng() * period);
+  const spinner = {
+    cx, cy, radius, w, h, period, phase, count,
+    kind: 'spinner',
+  };
+
+  // At the rightmost point, the platform's far edge is the takeoff edge
+  // used to size the big exit gap. This remains within standing-jump reach.
+  const rightEdge = cx + radius + w / 2;
+  const exitW = Math.max(130, rollPlatW(cfg, tScale, rng, 130));
+  const nx = rightEdge + exitGap;
+  const ny = cursor.y;
+
+  return {
+    platforms: [{ x:nx, y:ny, w:exitW, h:24, kind:'static' }],
+    movers:[spinner],
+    hazards:[],
+    hops:[
+      { dx:entryGap, dy:0, w },
+      { dx:exitGap, dy:0, w:exitW }
+    ],
+    endX:nx+exitW,
+    endY:ny,
+    minY:Math.min(cursor.y, cy-radius),
+    maxY:Math.max(cursor.y, cy+radius, ny),
+  };
+}
+
+function segBlink(cursor, cfg, rng, tScale) {
+  const dyA = rollDy(cfg, tScale, rng, 0.65);
+  const bw = rollPlatW(cfg, tScale, rng, 44);
+  const dxA = placeHopStanding(dyA, bw, rng);
+  const bx = cursor.x + dxA, by = cursor.y + dyA;
+  const period = Math.round(randRange(rng, cfg.blinkPeriod[0], cfg.blinkPeriod[1]));
+  const visibleFrac = randRange(rng, cfg.blinkVisible[0], cfg.blinkVisible[1]);
+  const phase = Math.floor(rng() * period);
+  const blinker = { x: bx, y: by, w: bw, h: 18, period, visibleFrac, phase, kind: "blink" };
+  const dyB = rollDy(cfg, tScale, rng, 0.65);
+  const nw = rollPlatW(cfg, tScale, rng, 34);
+  const dxB = placeHop(dyB, nw, rng);
+  const nx = bx + bw + dxB, ny = by + dyB;
+  return {
+    platforms: [{ x: nx, y: ny, w: nw, h: 24, kind: "static" }],
+    blinkers: [blinker],
+    hops: [{ dx: dxA, dy: dyA, w: bw }, { dx: dxB, dy: dyB, w: nw }],
+    hazards: [],
+    endX: nx + nw, endY: ny, minY: Math.min(cursor.y, by, ny), maxY: Math.max(cursor.y, by, ny),
+  };
+}
+
+function segGauntlet(cursor, cfg, rng, tScale) {
+  // Chain two sub-segments back-to-back for dense, late-tier combos.
+  const pool = [segMover, segBlink, segPrecision, segStairs];
+  const first = pool[Math.floor(rng() * pool.length)];
+  const second = pool[Math.floor(rng() * pool.length)];
+  const r1 = first(cursor, cfg, rng, tScale);
+  const midCursor = { x: r1.endX, y: r1.endY };
+  const r2 = second(midCursor, cfg, rng, tScale);
+  const platforms = [...r1.platforms, ...r2.platforms];
+  const movers = [...(r1.movers || []), ...(r2.movers || [])];
+  const blinkers = [...(r1.blinkers || []), ...(r2.blinkers || [])];
+  let hazards = [...(r1.hazards || []), ...(r2.hazards || [])];
+  if (rng() < 0.4 && r2.hops.length) {
+    const h0 = r2.hops[0];
+    hazards.push({ x: midCursor.x, y: Math.max(midCursor.y, midCursor.y + h0.dy) + 30, w: h0.dx, h: 220, kind: "spike" });
+  }
+  return {
+    platforms, movers, blinkers, hazards,
+    hops: [...r1.hops, ...r2.hops],
+    endX: r2.endX, endY: r2.endY,
+    minY: Math.min(r1.minY, r2.minY), maxY: Math.max(r1.maxY, r2.maxY),
+  };
+}
+
+function segPowerChallenge(cursor, power, rng) {
+  const w = 132;
+  if (power === 'lowGravity') {
+    const dy = -122; // above the normal -95px safe ceiling
+    const poweredReach = reachWithGravity(dy, GRAVITY * 0.52) || 230;
+    const dx = clamp(poweredReach - w * 0.48, 150, 255);
+    const nx = cursor.x + dx, ny = cursor.y + dy;
+    return { platforms: [{ x:nx, y:ny, w, h:24, kind:'powerLanding' }], hops:[{dx,dy,w}], hazards:[], endX:nx+w, endY:ny, minY:ny, maxY:cursor.y };
+  }
+  // This ledge is too high for one jump, but comfortably catches a second pop.
+  const dy = -148, dx = 102, nx = cursor.x + dx, ny = cursor.y + dy;
+  return { platforms: [{ x:nx, y:ny, w, h:24, kind:'powerLanding' }], hops:[{dx,dy,w}], hazards:[], endX:nx+w, endY:ny, minY:ny, maxY:cursor.y };
+}
+
+const SEGMENT_FN = {
+  gap: segGap, stairs: segStairs, precision: segPrecision,
+  mover: segMover, swing: segSwing, spinner: segSpinner, blink: segBlink, gauntlet: segGauntlet,
+};
+
+// Hand-picked "random" levels for the new triple-spinner challenge.
+// Keeping this list fixed makes the level layout deterministic and lets the
+// game always report exactly which levels contain the special obstacle.
+const TRIPLE_SPINNER_LEVELS = new Set([13, 27, 42, 58, 73, 89, 96]);
+
+function pickSegmentType(cfg, rng) {
+  const weights = [["gap", 1.0], ["stairs", 0.5]];
+  if (cfg.moverChance > 0) weights.push(["mover", cfg.moverChance]);
+  if (cfg.blinkChance > 0) weights.push(["blink", cfg.blinkChance]);
+  if (cfg.precisionChance > 0) weights.push(["precision", cfg.precisionChance]);
+  if (cfg.swingChance > 0) weights.push(["swing", cfg.swingChance]);
+  // Triple spinners are intentionally placed only on the selected levels
+  // above, so the special obstacle list stays predictable.
+  if (cfg.gauntletChance > 0) weights.push(["gauntlet", cfg.gauntletChance]);
+  const total = weights.reduce((s, [, w]) => s + w, 0);
+  let r = rng() * total;
+  for (const [type, w] of weights) { if (r < w) return type; r -= w; }
+  return "gap";
+}
+
+// ===== MAIN LEVEL GENERATOR =====
+function generateLevel(levelNum) {
+  const tierIdx = Math.min(9, Math.floor((levelNum - 1) / 10));
+  const posInTier = (levelNum - 1) % 10;
+  const cfg = TIERS[tierIdx];
+  const rng = mulberry32(levelNum * 7919 + 424242);
+  const tScale = posInTier / 9;
+
+  let cursor = { x: 170, y: 0 };
+  const platforms = [{ x: 0, y: 0, w: 170, h: 26, kind: "start" }];
+  const movers = [], blinkers = [], hazards = [], allHops = [];
+  const requiredPower = powerForLevel(levelNum);
+  const powerups = [];
+  let minY = 0, maxY = 0;
+
+  // Power levels begin normally. The pickup is on the first landing, and the
+  // following obstacle is outside the ordinary move set, making it a real
+  // in-level power-up rather than a start-of-level switch.
+  if (requiredPower) {
+    const intro = segGap(cursor, cfg, rng, Math.min(tScale, 0.35));
+    platforms.push(...intro.platforms); allHops.push(...intro.hops);
+    hazards.push(...intro.hazards);
+    const landing = intro.platforms[0];
+    powerups.push({ x: landing.x + landing.w / 2, y: landing.y - 24, type: requiredPower, collected: false });
+    cursor = { x: intro.endX, y: intro.endY };
+    minY = Math.min(minY, intro.minY); maxY = Math.max(maxY, intro.maxY);
+    const result = segPowerChallenge(cursor, requiredPower, rng);
+    platforms.push(...result.platforms); allHops.push(...result.hops);
+    cursor = { x: result.endX, y: result.endY };
+    minY = Math.min(minY, result.minY); maxY = Math.max(maxY, result.maxY);
+  }
+
+  const segCount = Math.round(randRange(rng, cfg.segs[0], cfg.segs[1])) + (tierIdx === 9 ? 3 : 0);
+  for (let i = 0; i < segCount; i++) {
+    // The Gummy Gauntlet ends with recurring multi-part challenges instead of
+    // relying on random easy gaps, so levels 91–100 earn their Legendary label.
+    const spinnerSegmentIndex = Math.min(segCount - 1, Math.max(1, Math.floor(segCount / 2)));
+    const type = tierIdx === 9 && (i === 1 || i === segCount - 2 || i === segCount - 1)
+      ? 'gauntlet'
+      : (TRIPLE_SPINNER_LEVELS.has(levelNum) && i === spinnerSegmentIndex ? 'spinner' : pickSegmentType(cfg, rng));
+    const fn = SEGMENT_FN[type];
+    const result = fn(cursor, cfg, rng, tScale);
+    // keep vertical drift bounded so levels stay visually/camera contained
+    const driftAdj = clamp(result.endY, -520, 520) - result.endY;
+    if (driftAdj !== 0) {
+      result.platforms.forEach(p => p.y += driftAdj);
+      (result.movers || []).forEach(m => {
+        if (m.kind === 'spinner') m.cy += driftAdj;
+        else { m.y0 += driftAdj; m.y1 += driftAdj; }
+      });
+      (result.blinkers || []).forEach(b => b.y += driftAdj);
+      (result.hazards || []).forEach(h => h.y += driftAdj);
+      result.endY += driftAdj; result.minY += driftAdj; result.maxY += driftAdj;
+    }
+    platforms.push(...result.platforms);
+    if (result.movers) movers.push(...result.movers);
+    if (result.blinkers) blinkers.push(...result.blinkers);
+    if (result.hazards) hazards.push(...result.hazards);
+    allHops.push(...result.hops);
+    minY = Math.min(minY, result.minY);
+    maxY = Math.max(maxY, result.maxY);
+    cursor = { x: result.endX, y: result.endY };
+  }
+
+  const goalW = 160;
+  platforms.push({ x: cursor.x, y: cursor.y, w: goalW, h: 26, kind: "goal" });
+
+  return {
+    number: levelNum, tier: tierIdx, tierName: cfg.name, tierLabel: cfg.label, tierKey: cfg.key,
+    platforms, movers, blinkers, hazards, hops: allHops, powerups, requiredPower,
+    start: { x: 55, y: -70 },
+    goal: { x: cursor.x + goalW / 2, y: cursor.y - 40 },
+    width: cursor.x + goalW + 120,
+    minY: minY - 60, maxY: maxY + 60,
+    deathY: maxY + 650,
+  };
+}
+
+/* =========================================================================
+   GAME ENGINE
+   ========================================================================= */
+const COYOTE_FRAMES = 7;
+const JUMP_BUFFER_FRAMES = 7;
+const GROUND_ACCEL = 0.9;
+const FRICTION = 0.8;
+const DEATH_LINES = ["Melted into a puddle!", "Too sticky to handle!", "Crushed like a candy cane!",
+  "Fell into the fudge!", "Gobbled up by the gummies!", "Squashed like a jawbreaker!",
+  "Dissolved in the soda pop!", "Caught in the caramel!", "Turned to taffy!"];
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let DPR = 1;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const w = window.innerWidth, h = window.innerHeight;
+  canvas.width = Math.floor(w * DPR);
+  canvas.height = Math.floor(h * DPR);
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', resize);
+resize();
+
+if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) document.body.classList.add('touch');
+
+function aabb(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
+function overlapX(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x; }
+function roundRectPath(x, y, w, h, r) {
+  const rr = Math.max(0, Math.min(r, w / 2, h / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
+/* ---------- input ---------- */
+const input = { left: false, right: false, jump: false, jumpBuffer: 0 };
+const LEFT_KEYS = ['ArrowLeft', 'a', 'A'];
+const RIGHT_KEYS = ['ArrowRight', 'd', 'D'];
+const JUMP_KEYS = ['ArrowUp', 'w', 'W', ' '];
+window.addEventListener('keydown', e => {
+  if (LEFT_KEYS.includes(e.key)) { input.left = true; e.preventDefault(); }
+  else if (RIGHT_KEYS.includes(e.key)) { input.right = true; e.preventDefault(); }
+  else if (JUMP_KEYS.includes(e.key)) { if (!input.jump) input.jumpBuffer = JUMP_BUFFER_FRAMES; input.jump = true; e.preventDefault(); }
+  else if (e.key === 'r' || e.key === 'R') { if (state.mode === 'playing' || state.mode === 'dying') restartLevel(); }
+  else if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { togglePause(); }
+});
+window.addEventListener('keyup', e => {
+  if (LEFT_KEYS.includes(e.key)) input.left = false;
+  if (RIGHT_KEYS.includes(e.key)) input.right = false;
+  if (JUMP_KEYS.includes(e.key)) input.jump = false;
+});
+function bindTouchBtn(el, onDown, onUp) {
+  el.addEventListener('pointerdown', e => { e.preventDefault(); onDown(); });
+  el.addEventListener('pointerup', e => { e.preventDefault(); onUp(); });
+  el.addEventListener('pointerleave', e => { onUp(); });
+  el.addEventListener('pointercancel', e => { onUp(); });
+  el.addEventListener('contextmenu', e => e.preventDefault());
+}
+bindTouchBtn(document.getElementById('btnLeft'), () => input.left = true, () => input.left = false);
+bindTouchBtn(document.getElementById('btnRight'), () => input.right = true, () => input.right = false);
+bindTouchBtn(document.getElementById('btnJump'), () => { if (!input.jump) input.jumpBuffer = JUMP_BUFFER_FRAMES; input.jump = true; }, () => input.jump = false);
+
+/* ---------- audio (synthesized, no external assets) ---------- */
+let actx = null, muted = false;
+function ensureAudio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } }
+function tone(freq, dur, type, vol, delay) {
+  if (muted || !actx) return;
+  const t0 = actx.currentTime + (delay || 0);
+  const osc = actx.createOscillator(), gain = actx.createGain();
+  osc.type = type || 'sine'; osc.frequency.setValueAtTime(freq, t0);
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(vol || 0.12, t0 + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(gain); gain.connect(actx.destination);
+  osc.start(t0); osc.stop(t0 + dur + 0.03);
+}
+function sfxJump() { tone(520, 0.09, 'triangle', 0.11); tone(780, 0.07, 'triangle', 0.06, 0.03); }
+function sfxLand() { tone(200, 0.05, 'sine', 0.05); }
+function sfxDeath() { tone(180, 0.25, 'sawtooth', 0.09); tone(90, 0.3, 'sawtooth', 0.07, 0.05); }
+function sfxCheckpoint() { [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.14, 'triangle', 0.08, i * 0.06)); }
+function sfxVictory() { [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, 0.22, 'triangle', 0.09, i * 0.1)); }
+function sfxNewZone() { tone(392, 0.14, 'sine', 0.08); tone(523, 0.18, 'sine', 0.09, 0.09); }
+
+/* ---------- storage ---------- */
+async function saveProgressState(furthestLevel) {
+  try { await window.storage.set('progress', JSON.stringify({ furthestLevel, deaths: state.deaths, updatedAt: Date.now() })); }
+  catch (e) { console.warn('Progress save failed', e); }
+}
+async function loadSavedProgress() {
+  try { const r = await window.storage.get('progress'); return r ? JSON.parse(r.value) : null; }
+  catch (e) { return null; }
+}
+
+/* ---------- state ---------- */
+const state = {
+  mode: 'menu', levelNum: 1, level: null, deaths: 0, levelDeaths: 0,
+  camera: { x: 0, y: 0 }, particles: [], clock: 0, activePower: null, furthestLevel: 1,
+};
+let selectedSprite = 'gumdrop';
+let player = {};
+const mp = { ws:null, id:null, room:null, host:false, connected:false, started:false, lastSend:0, completedLevel:null, remotes:{} };
+
+function resetPlayer(x, y) {
+  player = { x, y, vx: 0, vy: 0, w: PLAYER_W, h: PLAYER_H, onGround: false, wasOnGround: false,
+    groundRef: null, coyote: 0, facing: 1, squash: 1, walkPhase: 0, doubleJumpReady: false };
+}
+function mpSetStatus(text) { const el = document.getElementById('mpStatus'); if (el) el.textContent = text; }
+function mpShowRoom(show) {
+  document.getElementById('mpRoomCode').classList.toggle('hidden', !show);
+  document.getElementById('mpPlayers').classList.toggle('hidden', !show);
+}
+function mpRenderPlayers(players) {
+  const el = document.getElementById('mpPlayers'); if (!el) return;
+  el.innerHTML = players.map((p, i) => `<div class="mp-player"><span><span class="mp-player-dot"></span>${p.id === mp.id ? 'You' : 'Player ' + (i + 1)}${p.host ? ' ⭐' : ''}</span><span>${p.ready ? '✓' : ''}</span></div>`).join('');
+  el.classList.remove('hidden');
+}
+function mpSocketUrl() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${proto}//${location.host}/ws`;
+}
+function mpConnect(action, roomCode) {
+  if (mp.ws) { try { mp.ws.close(); } catch(e){} }
+  mpSetStatus('Connecting…');
+  const ws = new WebSocket(mpSocketUrl()); mp.ws = ws;
+  ws.addEventListener('open', () => ws.send(JSON.stringify({ type: action, room: roomCode || '' })));
+  ws.addEventListener('message', e => {
+    let msg; try { msg = JSON.parse(e.data); } catch(e) { return; }
+    if (msg.type === 'welcome') {
+      mp.id = msg.id; mp.room = msg.room; mp.host = !!msg.host; mp.connected = true; mp.started = !!msg.started; mp.completedLevel = null; mp.remotes = {};
+      document.getElementById('mpRoomCode').textContent = msg.room;
+      document.getElementById('mpStartBtn').classList.toggle('hidden', !mp.host || mp.started);
+      mpSetStatus(mp.started ? `Level ${msg.level} in progress` : (mp.host ? 'Share the code, then start when everyone is ready.' : 'Waiting for the host to start…'));
+      mpShowRoom(true); mpRenderPlayers(msg.players || []);
+      if (msg.started) mpStartLevel(msg.level);
+    } else if (msg.type === 'players') {
+      mpRenderPlayers(msg.players || []);
+      if (msg.started !== undefined) mp.started = !!msg.started;
+    } else if (msg.type === 'start') { mp.started = true; mpSetStatus(`Everyone is on level ${msg.level}`); mpStartLevel(msg.level); }
+    else if (msg.type === 'playerUpdate') { if (msg.id !== mp.id) mp.remotes[msg.id] = { ...msg, targetX:msg.x, targetY:msg.y }; }
+    else if (msg.type === 'playerLeave') { delete mp.remotes[msg.id]; }
+    else if (msg.type === 'waiting') { mpSetStatus(`Waiting for teammates: ${msg.completed}/${msg.total} finished`); }
+    else if (msg.type === 'nextLevel') { mp.completedLevel = null; mpSetStatus(`Level ${msg.level}`); mpStartLevel(msg.level); }
+    else if (msg.type === 'victory') { mp.completedLevel = null; state.levelNum = 100; state.mode = 'victory'; sfxVictory(); showVictory(); }
+    else if (msg.type === 'error') { mpSetStatus(msg.message || 'Connection error'); }
+  });
+  ws.addEventListener('close', () => { if (mp.ws === ws) { mp.connected = false; mp.started = false; mpSetStatus('Disconnected'); } });
+  ws.addEventListener('error', () => mpSetStatus('Could not connect to multiplayer server'));
+}
+function mpStartLevel(n) {
+  document.getElementById('multiplayerScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  state.deaths = 0; state.furthestLevel = Math.max(state.furthestLevel, n); loadLevel(n); updateHUD(); state.mode = 'playing';
+  document.getElementById('mpBadge').classList.remove('hidden'); document.getElementById('mpBadge').textContent = `👥 ${Object.keys(mp.remotes).length + 1}`;
+  ensureAudio();
+}
+function mpSend(obj) { if (mp.ws && mp.connected && mp.ws.readyState === WebSocket.OPEN) mp.ws.send(JSON.stringify(obj)); }
+function mpLeave() {
+  if (mp.ws) { try { mp.ws.close(); } catch(e){} }
+  mp.ws = null; mp.connected = false; mp.started = false; mp.id = null; mp.room = null; mp.host = false; mp.remotes = {}; mp.completedLevel = null;
+  document.getElementById('mpBadge').classList.add('hidden');
+  document.getElementById('multiplayerScreen').classList.add('hidden'); document.getElementById('startScreen').classList.remove('hidden');
+}
+function mpUpdateRemotes(dt) {
+  for (const r of Object.values(mp.remotes)) {
+    r.x += (r.targetX - r.x) * Math.min(1, .25 * dt); r.y += (r.targetY - r.y) * Math.min(1, .25 * dt);
+  }
+  document.getElementById('mpBadge')?.classList.toggle('hidden', !mp.connected);
+  if (mp.connected) document.getElementById('mpBadge').textContent = `👥 ${Object.keys(mp.remotes).length + 1}`;
+}
+function drawRemotePlayer(r) {
+  const x = r.x + PLAYER_W / 2, y = r.y + PLAYER_H / 2;
+  ctx.save(); ctx.translate(x,y);
+  ctx.globalAlpha = .95; ctx.fillStyle = '#8de8ff'; ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#3a2317'; ctx.beginPath(); ctx.arc(-5,-2,2,0,Math.PI*2); ctx.arc(5,-2,2,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = '700 11px var(--font-body)'; ctx.textAlign='center'; ctx.fillText(r.name || 'Player',0,-22);
+  ctx.restore();
+}
+
+function loadLevel(n) {
+  state.levelNum = n;
+  state.level = generateLevel(n);
+  resetPlayer(state.level.start.x, state.level.start.y);
+  state.camera.x = player.x; state.camera.y = player.y;
+  state.levelDeaths = 0;
+  state.activePower = null;
+}
+
+/* ---------- mover / blinker helpers ---------- */
+function moverRect(m, t, index) {
+  if (m.kind === 'spinner') {
+    const i = index || 0;
+    const angle = ((t + m.phase) % m.period) / m.period * Math.PI * 2 + (i * Math.PI * 2 / m.count);
+    return { x: m.cx + Math.cos(angle) * m.radius - m.w / 2, y: m.cy + Math.sin(angle) * m.radius - m.h / 2, w: m.w, h: m.h };
+  }
+  const cyclePos = ((t + m.phase) % m.period) / m.period;
+  const f = (Math.sin(cyclePos * Math.PI * 2 - Math.PI / 2) + 1) / 2;
+  const x = lerp(m.x0, m.x1, f);
+  let y = lerp(m.y0, m.y1, f);
+  if (m.kind === 'swing') y += Math.sin((t + m.phase) * 0.045) * m.wobbleAmp;
+  return { x, y, w: m.w, h: m.h };
+}
+function blinkSolid(b, t) { return (((t + b.phase) % b.period) / b.period) < b.visibleFrac; }
+function blinkWarning(b, t) {
+  const cp = ((t + b.phase) % b.period) / b.period;
+  return cp < b.visibleFrac && cp > b.visibleFrac * 0.72;
+}
+function collectSolids(t) {
+  const lvl = state.level;
+  const list = lvl.platforms.map(p => ({ x: p.x, y: p.y, w: p.w, h: p.h, __ref: null }));
+  for (const m of lvl.movers) {
+    const count = m.kind === 'spinner' ? m.count : 1;
+    for (let i = 0; i < count; i++) {
+      const r = moverRect(m, t, i);
+      list.push({ x: r.x, y: r.y, w: r.w, h: r.h, __ref: m, __index: i });
+    }
+  }
+  for (const b of lvl.blinkers) { if (blinkSolid(b, t)) list.push({ x: b.x, y: b.y, w: b.w, h: b.h, __ref: null }); }
+  return list;
+}
+
+/* ---------- particles ---------- */
+function spawnParticles(type, x, y) {
+  const cfgs = {
+    jump: { n: 5, color: ['#fff', '#ffd7ec'], speed: 2, life: 16, size: 3 },
+    land: { n: 4, color: ['#fff'], speed: 1.5, life: 12, size: 2.5 },
+    death: { n: 18, color: ['#ff3f6e', '#ffb4d0', '#fff'], speed: 4.5, life: 34, size: 4 },
+    checkpoint: { n: 20, color: ['#ffd700', '#fff', '#6fe3b4'], speed: 3.6, life: 32, size: 3.5 },
+  };
+  const c = cfgs[type];
+  for (let i = 0; i < c.n; i++) {
+    const ang = Math.random() * Math.PI * 2, spd = c.speed * (0.5 + Math.random());
+    state.particles.push({ x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - (type === 'death' || type === 'checkpoint' ? 1.5 : 0),
+      life: c.life, maxLife: c.life, size: c.size * (0.6 + Math.random() * 0.8), color: c.color[Math.floor(Math.random() * c.color.length)] });
+  }
+}
+function updateParticles(dt) {
+  for (let i = state.particles.length - 1; i >= 0; i--) {
+    const p = state.particles[i];
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 0.15 * dt; p.life -= dt;
+    if (p.life <= 0) state.particles.splice(i, 1);
+  }
+}
+function drawParticles() {
+  for (const p of state.particles) {
+    ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function collectPowerups() {
+  for (const power of state.level.powerups) {
+    if (power.collected) continue;
+    const hitbox = { x: power.x - 15, y: power.y - 15, w: 30, h: 30 };
+    if (aabb(player, hitbox)) {
+      power.collected = true; state.activePower = power.type;
+      player.doubleJumpReady = power.type === 'doubleJump';
+      spawnParticles('checkpoint', power.x, power.y);
+      sfxCheckpoint(); updateHUD();
+      showDeathFlash(POWER_INFO[power.type].name + ' unlocked!');
+    }
+  }
+}
+
+/* ---------- player update ---------- */
+function updatePlayer(dt) {
+  const lvl = state.level;
+  let targetVx = 0;
+  if (input.left) targetVx -= MOVE_SPEED;
+  if (input.right) targetVx += MOVE_SPEED;
+  if (targetVx !== 0) player.facing = targetVx > 0 ? 1 : -1;
+  const accel = player.onGround ? GROUND_ACCEL : AIR_ACCEL;
+  if (targetVx !== 0) player.vx += clamp(targetVx - player.vx, -accel * dt, accel * dt);
+  else if (player.onGround) { player.vx *= Math.pow(FRICTION, dt); if (Math.abs(player.vx) < 0.05) player.vx = 0; }
+  // Moon Mint changes only vertical physics. Releasing left/right stops horizontal
+  // drift immediately, so a low-gravity jump never carries the player forward.
+  else if (state.activePower === 'lowGravity') player.vx = 0;
+  player.vx = clamp(player.vx, -MOVE_SPEED, MOVE_SPEED);
+
+  if (input.jumpBuffer > 0) input.jumpBuffer -= dt;
+  if (!player.onGround) player.coyote -= dt;
+
+  const canGroundJump = player.onGround || player.coyote > 0;
+  const canDoubleJump = state.activePower === 'doubleJump' && !canGroundJump && player.doubleJumpReady;
+  if (input.jumpBuffer > 0 && (canGroundJump || canDoubleJump)) {
+    const isDouble = canDoubleJump;
+    player.vy = JUMP_VELOCITY; player.onGround = false; player.coyote = 0; input.jumpBuffer = 0;
+    player.groundRef = null; player.squash = isDouble ? 1.5 : 1.35;
+    player.doubleJumpReady = isDouble ? false : state.activePower === 'doubleJump';
+    sfxJump(); spawnParticles('jump', player.x + player.w / 2, player.y + player.h);
+  }
+
+  if (player.onGround && player.groundRef) {
+    const ref = player.groundRef.m || player.groundRef;
+    const index = player.groundRef.index || 0;
+    const cur = moverRect(ref, state.clock, index);
+    const prev = moverRect(ref, state.clock - dt, index);
+    player.x += cur.x - prev.x; player.y += cur.y - prev.y;
+  }
+
+  player.vy += GRAVITY * (state.activePower === 'lowGravity' ? 0.52 : 1) * dt;
+  player.vy = Math.min(player.vy, MAX_FALL);
+
+  player.x += player.vx * dt;
+  // Inset the hitbox vertically for the horizontal pass only: a steep fall trajectory
+  // that's about to land can otherwise clip a platform/blinker's top edge and get
+  // read as a side collision (especially right as a blinker turns solid mid-fall,
+  // or from floating-point round-trip error at an exact flush landing), bouncing the
+  // player sideways instead of landing them. 8px keeps genuine side hits working.
+  const xCheckBox = { x: player.x, y: player.y + 8, w: player.w, h: player.h - 16 };
+  let solids = collectSolids(state.clock);
+  for (const r of solids) {
+    if (aabb(xCheckBox, r)) {
+      if (player.vx > 0) player.x = r.x - player.w;
+      else if (player.vx < 0) player.x = r.x + r.w;
+      player.vx = 0;
+      xCheckBox.x = player.x;
+    }
+  }
+
+  const prevBottom = player.y + player.h;
+  player.y += player.vy * dt;
+  player.onGround = false;
+  let newGroundRef = null;
+  solids = collectSolids(state.clock);
+  for (const r of solids) {
+    const newBottom = player.y + player.h;
+    if (player.vy >= 0 && prevBottom <= r.y + 1 && newBottom >= r.y && overlapX(player, r)) {
+      player.y = r.y - player.h; player.vy = 0; player.onGround = true;
+      newGroundRef = r.__ref ? { m: r.__ref, index: r.__index || 0 } : null;
+      if (!player.wasOnGround) { spawnParticles('land', player.x + player.w / 2, player.y + player.h); sfxLand(); player.squash = 0.72; }
+    } else if (player.vy < 0 && aabb(player, r)) {
+      player.y = r.y + r.h; player.vy = 0;
+    }
+  }
+  if (player.onGround) { player.coyote = COYOTE_FRAMES; player.groundRef = newGroundRef; player.doubleJumpReady = state.activePower === 'doubleJump'; }
+  player.wasOnGround = player.onGround;
+  player.squash += (1 - player.squash) * Math.min(1, 0.25 * dt);
+
+  for (const hz of lvl.hazards) { if (aabb(player, hz)) { die(); return; } }
+  if (player.y > lvl.deathY) { die(); return; }
+  collectPowerups();
+
+  const goalPlat = lvl.platforms[lvl.platforms.length - 1];
+  if (aabb(player, { x: goalPlat.x, y: goalPlat.y - 40, w: goalPlat.w, h: goalPlat.h + 40 })) { completeLevel(); return; }
+}
+
+function die() {
+  if (state.mode !== 'playing') return;
+  state.deaths++; state.levelDeaths++;
+  spawnParticles('death', player.x + player.w / 2, player.y + player.h / 2);
+  sfxDeath();
+  updateHUD();
+  showDeathFlash(DEATH_LINES[Math.floor(Math.random() * DEATH_LINES.length)]);
+  state.mode = 'dying';
+  setTimeout(() => {
+    resetPlayer(state.level.start.x, state.level.start.y);
+    state.camera.x = player.x; state.camera.y = player.y;
+    state.mode = 'playing';
+  }, 420);
+}
+function completeLevel() {
+  if (state.mode !== 'playing') return;
+  state.mode = 'transition';
+  spawnParticles('checkpoint', player.x + player.w / 2, player.y);
+  sfxCheckpoint();
+  if (mp.connected && mp.started) {
+    if (mp.completedLevel === state.levelNum) return;
+    mp.completedLevel = state.levelNum;
+    showDeathFlash('Level cleared — waiting for teammates!');
+    mpSend({ type:'complete', level:state.levelNum });
+    return;
+  }
+  setTimeout(() => {
+    if (state.levelNum >= 100) {
+      state.furthestLevel = 101;
+      saveProgressState(101);
+      state.mode = 'victory'; sfxVictory(); showVictory();
+      return;
+    }
+    const nextNum = state.levelNum + 1;
+    const prevTier = Math.floor((state.levelNum - 1) / 10);
+    const nextTier = Math.floor((nextNum - 1) / 10);
+    loadLevel(nextNum);
+    state.furthestLevel = Math.max(state.furthestLevel, nextNum);
+    saveProgressState(nextNum);
+    updateHUD();
+    if (nextTier !== prevTier) {
+      sfxNewZone(); showZoneBanner(nextTier); state.mode = 'zoneBanner';
+      setTimeout(() => { if (state.mode === 'zoneBanner') state.mode = 'playing'; }, 2200);
+    } else { state.mode = 'playing'; }
+  }, 480);
+}
+
+/* ---------- camera ---------- */
+function updateCamera(dt) {
+  const targetX = player.x + player.w / 2 + player.vx * 6;
+  const targetY = player.y + player.h / 2;
+  const ease = Math.min(1, 0.14 * dt);
+  state.camera.x += (targetX - state.camera.x) * ease;
+  state.camera.y += (targetY - state.camera.y) * ease;
+}
+
+/* ---------- rendering ---------- */
+function drawBackground(w, h, cfg) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, cfg.bg[0]); g.addColorStop(1, cfg.bg[1]);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  ctx.save(); ctx.globalAlpha = 0.16;
+  const spacing = 220, offset = (state.camera.x * 0.2) % spacing;
+  for (let i = -1; i * spacing - offset < w + spacing; i++) {
+    const bx = i * spacing - offset, by = h * 0.2 + Math.sin(i * 1.7) * 40;
+    ctx.fillStyle = cfg.accent; ctx.beginPath(); ctx.arc(bx, by, 24, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 0.12;
+  const spacing2 = 340, offset2 = (state.camera.x * 0.4) % spacing2;
+  for (let i = -1; i * spacing2 - offset2 < w + spacing2; i++) {
+    const bx = i * spacing2 - offset2, by = h * 0.62 + Math.cos(i * 2.3) * 50;
+    ctx.fillStyle = cfg.plat2; ctx.beginPath(); ctx.arc(bx, by, 38, 0, Math.PI * 2); ctx.fill();
+  }
+  // Each ten-level world owns a distinct confectionery pattern.
+  const drift = state.camera.x * 0.16;
+  ctx.lineCap = 'round'; ctx.strokeStyle = cfg.accent; ctx.fillStyle = cfg.accent;
+  switch (cfg.key) {
+    case 'gumdrop': // Gumdrop Garden: stems, blossoms, and gumdrops
+      ctx.globalAlpha = .23; ctx.lineWidth = 3;
+      for (let x = -30; x < w + 40; x += 82) { const bx = x - drift % 82, stem = h - 34 - (x % 3) * 18; ctx.beginPath();ctx.moveTo(bx,h);ctx.quadraticCurveTo(bx-10,stem+25,bx,stem);ctx.stroke();ctx.beginPath();ctx.arc(bx,stem,11,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(bx+11,stem+7,5,0,Math.PI*2);ctx.fill(); }
+      break;
+    case 'cotton': // Cotton Candy Clouds: fluffy cloud banks and wind ribbons
+      ctx.globalAlpha = .19;
+      for (let i = 0; i < 10; i++) { const x = i*145 - drift%145 - 60, y = 45 + (i%4)*118; for(let p=0;p<4;p++){ctx.beginPath();ctx.arc(x+p*17,y+(p%2)*5,18,0,Math.PI*2);ctx.fill();} }
+      ctx.globalAlpha=.12;ctx.lineWidth=5;ctx.setLineDash([16,15]); for(let y=25;y<h;y+=125){ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(w*.3,y-22,w*.65,y+22,w,y);ctx.stroke();}ctx.setLineDash([]);
+      break;
+    case 'choc': // Chocolate River: a flowing cocoa river
+      ctx.globalAlpha=.25;ctx.fillStyle=cfg.plat2;ctx.beginPath();ctx.moveTo(0,h*.7);for(let x=0;x<=w;x+=35)ctx.lineTo(x,h*.7+Math.sin((x+drift)*.035)*18);ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();ctx.fill();
+      ctx.globalAlpha=.22;ctx.strokeStyle=cfg.accent;ctx.lineWidth=3;for(let y=h*.75;y<h;y+=20){ctx.beginPath();for(let x=0;x<=w;x+=25){const py=y+Math.sin((x+drift)*.05+y)*5;x?ctx.lineTo(x,py):ctx.moveTo(x,py);}ctx.stroke();}
+      break;
+    case 'cane': // Candy Cane Forest: striped tree trunks and hooks
+      ctx.globalAlpha=.24;ctx.lineWidth=9; for(let x=18;x<w+40;x+=94){const tx=x-drift%94;ctx.beginPath();ctx.moveTo(tx,h);ctx.lineTo(tx,h-95);ctx.quadraticCurveTo(tx,h-120,tx+23,h-120);ctx.stroke();ctx.strokeStyle='#ff4c68';ctx.setLineDash([9,8]);ctx.beginPath();ctx.moveTo(tx,h);ctx.lineTo(tx,h-95);ctx.quadraticCurveTo(tx,h-120,tx+23,h-120);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle=cfg.accent;}
+      break;
+    case 'sour': // Sour Gummy Swamp: lily gummies and fizzy bubbles
+      ctx.globalAlpha=.25;ctx.lineWidth=2;for(let i=0;i<24;i++){const x=(i*103-drift)%(w+80)-40,y=h*.54+(i*61)%(h*.42),r=6+i%9;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.ellipse(x,y+3,r*1.6,r*.65,0,0,Math.PI*2);ctx.fill();}
+      break;
+    case 'licorice': // Licorice Labyrinth: winding maze paths
+      ctx.globalAlpha=.24;ctx.lineWidth=5; for(let y=35;y<h;y+=88){ctx.beginPath();ctx.moveTo(-20,y);ctx.lineTo(w*.3,y);ctx.lineTo(w*.3,y+35);ctx.lineTo(w*.72,y+35);ctx.lineTo(w*.72,y-18);ctx.lineTo(w+20,y-18);ctx.stroke();}
+      break;
+    case 'jaw': // Jawbreaker Jungle: curling vines and candy fruit
+      ctx.globalAlpha=.22;ctx.lineWidth=4;for(let x=15;x<w+40;x+=80){const vx=x-drift%80;ctx.beginPath();ctx.moveTo(vx,0);ctx.bezierCurveTo(vx-25,h*.25,vx+30,h*.45,vx,h*.7);ctx.stroke();ctx.beginPath();ctx.arc(vx,h*.35,12,0,Math.PI*2);ctx.fill();}
+      break;
+    case 'caramel': // Caramel Chasm: glossy overhangs and deep drips
+      ctx.globalAlpha=.24;ctx.fillStyle=cfg.plat2;for(let x=-10;x<w+30;x+=62){const d=22+Math.abs(Math.sin((x+drift)*.03))*55;ctx.fillRect(x,0,13,d);ctx.beginPath();ctx.arc(x+6.5,d,6.5,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=.14;ctx.fillRect(0,h*.82,w,h*.18);
+      break;
+    case 'pepper': // Peppermint Peak: snowy mountain silhouettes
+      ctx.globalAlpha=.24;for(let x=-70;x<w+100;x+=115){const px=x-drift%115;ctx.beginPath();ctx.moveTo(px,h);ctx.lineTo(px+55,h-125);ctx.lineTo(px+115,h);ctx.closePath();ctx.fill();ctx.globalAlpha=.38;ctx.beginPath();ctx.moveTo(px+55,h-125);ctx.lineTo(px+39,h-88);ctx.lineTo(px+70,h-98);ctx.closePath();ctx.fill();ctx.globalAlpha=.24;} 
+      break;
+    default: // The Gummy Gauntlet: looming gummy towers and warning stars
+      ctx.globalAlpha=.24;for(let x=20;x<w+60;x+=92){const gx=x-drift%92;roundRectPath(gx,h-120,34,120,16);ctx.fill();ctx.beginPath();ctx.arc(gx+17,h-135,20,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=.34;ctx.fillStyle='#ffd700';for(let i=0;i<16;i++){const x=(i*113-drift)%(w+60)-30,y=35+(i*67)%(h*.6);ctx.beginPath();ctx.arc(x,y,3+i%3,0,Math.PI*2);ctx.fill();}
+  }
+  drawWorldCandyMotifs(w, h, cfg, drift);
+  ctx.restore();
+}
+function drawWorldCandyMotifs(w, h, cfg, drift) {
+  // Sparse, translucent candy details: enough to reward noticing, not enough
+  // to compete with platforms or hazards.
+  ctx.save(); ctx.globalAlpha = .18; ctx.fillStyle = cfg.accent; ctx.strokeStyle = cfg.accent; ctx.lineWidth = 2;
+  const pos = (i, gap) => ((i * gap - drift * .7) % (w + 80)) - 40;
+  for (let i = 0; i < 6; i++) {
+    const x = pos(i + 2, 173), y = 48 + (i * 97) % Math.max(120, h - 100);
+    if (cfg.key === 'gumdrop') { // little domed gumdrops
+      ctx.beginPath(); ctx.arc(x, y + 5, 9, Math.PI, 0); ctx.lineTo(x + 9, y + 10); ctx.lineTo(x - 9, y + 10); ctx.closePath(); ctx.fill();
+    } else if (cfg.key === 'cotton') { // airy spun-sugar puffs
+      for (let p = 0; p < 3; p++) { ctx.beginPath(); ctx.arc(x + p * 7, y + (p % 2) * 4, 6, 0, Math.PI * 2); ctx.fill(); }
+    } else if (cfg.key === 'choc') { // chocolate-bar squares
+      ctx.fillRect(x - 10, y - 7, 20, 14); ctx.strokeStyle = cfg.bg[0]; ctx.beginPath();ctx.moveTo(x,y-7);ctx.lineTo(x,y+7);ctx.moveTo(x-10,y);ctx.lineTo(x+10,y);ctx.stroke();ctx.strokeStyle=cfg.accent;
+    } else if (cfg.key === 'cane') { // tiny hooked candy canes
+      ctx.beginPath();ctx.moveTo(x,y+11);ctx.lineTo(x,y-4);ctx.quadraticCurveTo(x,y-13,x+8,y-13);ctx.stroke();ctx.setLineDash([3,3]);ctx.strokeStyle='#ff4c68';ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle=cfg.accent;
+    } else if (cfg.key === 'sour') { // miniature gummy bears
+      ctx.beginPath();ctx.arc(x,y-6,5,0,Math.PI*2);roundRectPath(x-7,y,x+14-(x-7),11,5);ctx.fill();
+    } else if (cfg.key === 'licorice') { // coiled licorice ropes
+      ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*1.8);ctx.arc(x+9,y,5,Math.PI,Math.PI*2.7);ctx.stroke();
+    } else if (cfg.key === 'jaw') { // tiny round jawbreakers with facets
+      ctx.beginPath();ctx.arc(x,y,10,0,Math.PI*2);ctx.fill();ctx.strokeStyle=cfg.bg[0];ctx.beginPath();ctx.moveTo(x-7,y);ctx.lineTo(x+7,y);ctx.moveTo(x,y-7);ctx.lineTo(x,y+7);ctx.stroke();ctx.strokeStyle=cfg.accent;
+    } else if (cfg.key === 'caramel') { // wrapped caramel chews
+      roundRectPath(x-9,y-6,18,12,3);ctx.fill();ctx.beginPath();ctx.moveTo(x-15,y);ctx.lineTo(x-9,y-4);ctx.lineTo(x-9,y+4);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(x+15,y);ctx.lineTo(x+9,y-4);ctx.lineTo(x+9,y+4);ctx.closePath();ctx.fill();
+    } else if (cfg.key === 'pepper') { // peppermint discs
+      ctx.beginPath();ctx.arc(x,y,10,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#ff3b6e';ctx.lineWidth=3;for(let a=0;a<3;a++){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a*2.1)*9,y+Math.sin(a*2.1)*9);ctx.stroke();}ctx.strokeStyle=cfg.accent;ctx.lineWidth=2;
+    } else { // gummy bears hidden among the final-world stars
+      ctx.beginPath();ctx.arc(x,y-7,5,0,Math.PI*2);ctx.arc(x-5,y-12,2.5,0,Math.PI*2);ctx.arc(x+5,y-12,2.5,0,Math.PI*2);ctx.fill();roundRectPath(x-8,y-2,16,14,6);ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+function drawPlatform(p, cfg) {
+  roundRectPath(p.x, p.y, p.w, p.h, 10);
+  const grad = ctx.createLinearGradient(0, p.y, 0, p.y + p.h);
+  grad.addColorStop(0, cfg.plat); grad.addColorStop(1, cfg.plat2);
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.save(); roundRectPath(p.x, p.y, p.w, p.h, 10); ctx.clip();
+  ctx.fillStyle = 'rgba(255,255,255,0.32)'; ctx.fillRect(p.x, p.y, p.w, Math.max(4, p.h * 0.4));
+  ctx.globalAlpha = .32; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+  for (let x = p.x - p.h; x < p.x + p.w; x += 18) { ctx.beginPath(); ctx.moveTo(x, p.y + p.h); ctx.lineTo(x + p.h, p.y); ctx.stroke(); }
+  ctx.restore();
+  const n = Math.max(2, Math.floor(p.w / 28));
+  for (let i = 0; i < n; i++) {
+    const sx = p.x + (i + 0.5) * (p.w / n), sy = p.y + 6;
+    ctx.fillStyle = i % 2 === 0 ? cfg.accent : 'rgba(255,255,255,0.7)';
+    ctx.save(); ctx.translate(sx, sy); ctx.rotate(i * 0.9); ctx.fillRect(-2.2, -1, 4.4, 2); ctx.restore();
+  }
+}
+function drawHazard(hz) {
+  const grad = ctx.createLinearGradient(0, hz.y, 0, hz.y + 60);
+  grad.addColorStop(0, '#c81e4a'); grad.addColorStop(1, '#5c0a24');
+  ctx.fillStyle = grad; ctx.fillRect(hz.x, hz.y, hz.w, Math.min(hz.h, 160));
+  const spikeW = 16, n = Math.max(2, Math.round(hz.w / spikeW));
+  for (let i = 0; i < n; i++) {
+    const sw = hz.w / n, sx = hz.x + i * sw;
+    ctx.beginPath(); ctx.moveTo(sx, hz.y + 16); ctx.lineTo(sx + sw / 2, hz.y - 6); ctx.lineTo(sx + sw, hz.y + 16); ctx.closePath();
+    ctx.fillStyle = i % 2 === 0 ? '#ff6b9d' : '#ffffff'; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 1; ctx.stroke();
+  }
+}
+function drawMover(r, cfg, kind) {
+  roundRectPath(r.x, r.y, r.w, r.h, 9);
+  ctx.fillStyle = kind === 'swing' ? cfg.accent : cfg.plat2;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2;
+  roundRectPath(r.x, r.y, r.w, r.h, 9); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath(); ctx.ellipse(r.x + r.w * 0.3, r.y + 4, Math.max(2, r.w * 0.16), 3, 0, 0, Math.PI * 2); ctx.fill();
+}
+function drawSpinner(m, cfg) {
+  // Draw the three identical orbiting platforms plus the shared hub/links.
+  ctx.save();
+  ctx.strokeStyle = 'rgba(80,62,74,.72)';
+  ctx.lineWidth = 3;
+
+  const angle = ((state.clock + m.phase) % m.period) / m.period * Math.PI * 2;
+  for (let i = 0; i < m.count; i++) {
+    const a = angle + i * Math.PI * 2 / m.count;
+    const px = m.cx + Math.cos(a) * m.radius;
+    const py = m.cy + Math.sin(a) * m.radius;
+
+    ctx.beginPath();
+    ctx.moveTo(m.cx, m.cy);
+    ctx.lineTo(px, py);
+    ctx.stroke();
+
+    const dist = Math.hypot(px - m.cx, py - m.cy);
+    const links = Math.max(3, Math.floor(dist / 13));
+    for (let j = 1; j < links; j++) {
+      const f = j / links;
+      const x = lerp(m.cx, px, f), y = lerp(m.cy, py, f);
+      ctx.fillStyle = '#e7e2e6';
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#8b7784'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    drawMover(
+      { x:px - m.w / 2, y:py - m.h / 2, w:m.w, h:m.h },
+      cfg,
+      'spinner'
+    );
+    ctx.strokeStyle = 'rgba(80,62,74,.72)';
+    ctx.lineWidth = 3;
+  }
+
+  ctx.fillStyle = '#ff8fc7';
+  ctx.beginPath(); ctx.arc(m.cx, m.cy, 15, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.65)';
+  ctx.beginPath(); ctx.arc(m.cx - 4, m.cy - 4, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function drawBlinker(b, cfg, t) {
+  const solid = blinkSolid(b, t), warn = blinkWarning(b, t);
+  if (!solid) {
+    ctx.save(); ctx.globalAlpha = 0.16; roundRectPath(b.x, b.y, b.w, b.h, 8);
+    ctx.strokeStyle = cfg.plat; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.restore();
+    return;
+  }
+  const flicker = warn ? (Math.floor(t / 4) % 2 === 0 ? 0.45 : 1) : 1;
+  ctx.save(); ctx.globalAlpha = flicker; roundRectPath(b.x, b.y, b.w, b.h, 8);
+  const grad = ctx.createLinearGradient(0, b.y, 0, b.y + b.h);
+  grad.addColorStop(0, cfg.accent); grad.addColorStop(1, cfg.plat);
+  ctx.fillStyle = grad; ctx.fill(); ctx.restore();
+}
+function drawCandyCanePost(x, y) {
+  ctx.save(); ctx.translate(x, y); ctx.lineWidth = 8; ctx.lineCap = 'round';
+  ctx.strokeStyle = '#ffffff';
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -46); ctx.quadraticCurveTo(0, -64, 18, -64); ctx.stroke();
+  ctx.strokeStyle = '#ff3f6e'; ctx.setLineDash([9, 9]);
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -46); ctx.quadraticCurveTo(0, -64, 18, -64); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+}
+function drawLollipopFlag(x, y, cfg) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -70); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, -94, 24, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.save(); ctx.beginPath(); ctx.arc(0, -94, 24, 0, Math.PI * 2); ctx.clip();
+  ctx.strokeStyle = cfg.plat; ctx.lineWidth = 6;
+  for (let r = 2; r < 26; r += 6) { ctx.beginPath(); ctx.arc(0, -94, r, 0, Math.PI * 2); ctx.stroke(); }
+  ctx.restore();
+  ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.arc(0, -94, 24, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+function drawPowerup(power) {
+  if (power.collected) return;
+  const info = POWER_INFO[power.type];
+  const bob = Math.sin(state.clock * 0.12 + power.x) * 3;
+  ctx.save(); ctx.translate(power.x, power.y + bob);
+  ctx.globalAlpha = .22; ctx.fillStyle = info.color; ctx.beginPath(); ctx.arc(0, 0, 23, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = info.color; ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#4b2454'; ctx.font = 'bold 17px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(info.icon, 0, 1);
+  ctx.restore();
+}
+function drawPlayer() {
+  ctx.save();
+  const cx = player.x + player.w / 2, cy = player.y + player.h / 2;
+  ctx.translate(cx, cy);
+  ctx.scale(player.facing, 1);
+  ctx.scale(1 / Math.sqrt(player.squash), player.squash);
+  const eye = () => { ctx.fillStyle='#3a2317'; ctx.beginPath(); ctx.arc(4,-2,2.2,0,Math.PI*2); ctx.arc(-6,-2,2.2,0,Math.PI*2); ctx.fill(); };
+  if (selectedSprite === 'lollipop') {
+    ctx.strokeStyle='#fff4df'; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(0,10); ctx.lineTo(0,19); ctx.stroke();
+    ctx.fillStyle='#ff5e9b'; ctx.beginPath(); ctx.arc(0,-3,14,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=3; for(let r=3;r<14;r+=4){ctx.beginPath();ctx.arc(0,-3,r,0,Math.PI*2);ctx.stroke();} eye();
+  } else if (selectedSprite === 'marshmallow') {
+    roundRectPath(-15,-15,30,30,11); ctx.fillStyle='#fff8f0'; ctx.fill(); ctx.strokeStyle='#ffb7d2';ctx.lineWidth=2;ctx.stroke(); eye();
+    ctx.fillStyle='#ff9bc2';ctx.beginPath();ctx.arc(-8,-13,3,0,Math.PI*2);ctx.arc(7,-14,3,0,Math.PI*2);ctx.fill();
+  } else if (selectedSprite === 'jelly') {
+    ctx.fillStyle='#79e2ad';ctx.beginPath();ctx.arc(0,0,15,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#eafff4';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.ellipse(-5,-8,5,3,0,0,Math.PI*2);ctx.fill();eye();
+  } else {
+    ctx.fillStyle = '#ffb4d0';
+    ctx.beginPath(); ctx.moveTo(-player.w/2-8,-4);ctx.lineTo(-player.w/2,0);ctx.lineTo(-player.w/2-8,4);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(player.w/2+8,-4);ctx.lineTo(player.w/2,0);ctx.lineTo(player.w/2+8,4);ctx.closePath();ctx.fill();
+    roundRectPath(-player.w/2,-player.h/2,player.w,player.h,player.w/2); const grad=ctx.createLinearGradient(0,-player.h/2,0,player.h/2);grad.addColorStop(0,'#ffd7a8');grad.addColorStop(1,'#f2a35c');ctx.fillStyle=grad;ctx.fill();ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=2;ctx.stroke();eye();
+  }
+  ctx.strokeStyle='#3a2317';ctx.lineWidth=2;ctx.beginPath();ctx.arc(-1,4,4,.15*Math.PI,.85*Math.PI);ctx.stroke();
+  ctx.restore();
+}
+function render() {
+  const w = canvas.width / DPR, h = canvas.height / DPR;
+  ctx.save(); ctx.scale(DPR, DPR); ctx.clearRect(0, 0, w, h);
+  if (!state.level) { ctx.restore(); return; }
+  const lvl = state.level, cfg = TIERS[lvl.tier];
+  drawBackground(w, h, cfg);
+  ctx.save();
+  ctx.translate(Math.round(w / 2 - state.camera.x), Math.round(h / 2 - state.camera.y));
+  for (const p of lvl.platforms) drawPlatform(p, cfg);
+  for (const hz of lvl.hazards) drawHazard(hz);
+  for (const m of lvl.movers) m.kind === 'spinner' ? drawSpinner(m, cfg) : drawMover(moverRect(m, state.clock), cfg, m.kind);
+  for (const b of lvl.blinkers) drawBlinker(b, cfg, state.clock);
+  for (const power of lvl.powerups) drawPowerup(power);
+  drawCandyCanePost(lvl.platforms[0].x + 24, lvl.platforms[0].y);
+  const goalPlat = lvl.platforms[lvl.platforms.length - 1];
+  drawLollipopFlag(goalPlat.x + goalPlat.w / 2, goalPlat.y, cfg);
+  drawParticles();
+  if (state.mode !== 'menu') { for (const r of Object.values(mp.remotes)) drawRemotePlayer(r); drawPlayer(); }
+  ctx.restore();
+  ctx.restore();
+}
+
+/* ---------- UI wiring ---------- */
+function updateHUD() {
+  document.getElementById('levelNum').textContent = state.levelNum;
+  document.getElementById('zoneLabel').textContent = TIERS[state.level.tier].name + ' · ' + TIERS[state.level.tier].label;
+  document.getElementById('deathCount').textContent = state.deaths;
+  document.getElementById('progressFill').style.width = state.levelNum + '%';
+  const badge = document.getElementById('powerBadge');
+  if (state.activePower) badge.textContent = POWER_INFO[state.activePower].icon + ' ' + POWER_INFO[state.activePower].hint;
+  else if (state.level.requiredPower) badge.textContent = 'Find ' + POWER_INFO[state.level.requiredPower].name;
+  else badge.textContent = 'Tutorial level';
+}
+function showZoneBanner(tierIdx) {
+  const cfg = TIERS[tierIdx];
+  document.getElementById('zoneBannerNum').textContent = tierIdx + 1;
+  document.getElementById('zoneBannerName').textContent = cfg.name;
+  document.getElementById('zoneBannerLabel').textContent = cfg.label;
+  const el = document.getElementById('zoneBanner');
+  el.classList.remove('hidden'); requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.classList.add('hidden'), 450); }, 1850);
+}
+function showDeathFlash(text) {
+  document.getElementById('deathFlashText').textContent = text;
+  const el = document.getElementById('deathFlash');
+  el.classList.remove('hidden'); requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.classList.add('hidden'), 300); }, 480);
+}
+function togglePause() {
+  if (state.mode === 'playing') { state.mode = 'paused'; document.getElementById('pauseScreen').classList.remove('hidden'); }
+  else if (state.mode === 'paused') { state.mode = 'playing'; document.getElementById('pauseScreen').classList.add('hidden'); }
+}
+function restartLevel() {
+  resetPlayer(state.level.start.x, state.level.start.y);
+  state.camera.x = player.x; state.camera.y = player.y;
+  state.mode = 'playing';
+  document.getElementById('pauseScreen').classList.add('hidden');
+}
+function showVictory() {
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('victoryDeaths').textContent = state.deaths;
+  document.getElementById('victoryScreen').classList.remove('hidden');
+  spawnParticles('checkpoint', player.x + player.w / 2, player.y);
+}
+function beginGame(levelNum, carryDeaths) {
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('levelSelectScreen').classList.add('hidden');
+  document.getElementById('victoryScreen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  state.deaths = carryDeaths || 0;
+  state.furthestLevel = Math.max(state.furthestLevel, levelNum);
+  loadLevel(levelNum);
+  updateHUD();
+  state.mode = 'playing';
+  ensureAudio();
+}
+
+document.getElementById('startBtn').addEventListener('click', () => beginGame(1, 0));
+document.getElementById('continueBtn').addEventListener('click', async () => {
+  const saved = await loadSavedProgress();
+  const level = saved && saved.furthestLevel ? Math.min(100, saved.furthestLevel) : 1;
+  state.furthestLevel = level;
+  beginGame(level, saved ? saved.deaths : 0);
+});
+function renderLevelGrid(unlockedLevel, deaths) {
+  const grid = document.getElementById('levelGrid');
+  const completedThrough = Math.min(100, Math.max(1, unlockedLevel - 1));
+  grid.replaceChildren();
+  for (let n = 1; n <= 100; n++) {
+    const button = document.createElement('button');
+    button.className = 'level-choice'; button.textContent = n; button.type = 'button';
+    const replayable = n <= completedThrough;
+    if (replayable) {
+      button.classList.add('unlocked');
+      if (n === unlockedLevel - 1) button.classList.add('current');
+      button.setAttribute('aria-label', 'Play completed level ' + n);
+      button.addEventListener('click', () => beginGame(n, deaths || 0));
+    } else {
+      button.classList.add('locked'); button.disabled = true;
+      button.setAttribute('aria-label', 'Level ' + n + ' is locked');
+    }
+    grid.appendChild(button);
+  }
+  const copy = document.getElementById('levelSelectCopy');
+  copy.textContent = unlockedLevel <= 1
+    ? 'Level 1 is ready. Complete a level to add it here for replay.'
+    : unlockedLevel > 100
+      ? 'Every level is complete — replay any candy challenge you like!'
+      : 'Levels 1–' + completedThrough + ' are replayable. Continue to tackle level ' + unlockedLevel + '.';
+}
+document.getElementById('levelSelectBtn').addEventListener('click', async () => {
+  const saved = await loadSavedProgress();
+  const unlockedLevel = TEST_UNLOCK_ALL_LEVELS ? 101 : (saved && saved.furthestLevel ? Math.min(101, saved.furthestLevel) : 1);
+  state.furthestLevel = unlockedLevel;
+  renderLevelGrid(unlockedLevel, saved ? saved.deaths : 0);
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('levelSelectScreen').classList.remove('hidden');
+});
+document.getElementById('closeLevelSelectBtn').addEventListener('click', () => {
+  document.getElementById('levelSelectScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+});
+document.getElementById('muteBtn').addEventListener('click', (e) => {
+  muted = !muted; e.target.textContent = muted ? '🔇' : '🔊';
+});
+document.getElementById('pauseBtn').addEventListener('click', togglePause);
+document.getElementById('resumeBtn').addEventListener('click', togglePause);
+document.getElementById('restartLevelBtn').addEventListener('click', restartLevel);
+document.getElementById('quitBtn').addEventListener('click', () => {
+  document.getElementById('pauseScreen').classList.add('hidden');
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+  state.mode = 'menu';
+});
+document.getElementById('playAgainBtn').addEventListener('click', async () => {
+  document.getElementById('victoryScreen').classList.add('hidden');
+  try { await window.storage.delete('progress'); } catch (e) {}
+  beginGame(1, 0);
+});
+document.querySelectorAll('.sprite-choice').forEach(btn => btn.addEventListener('click', () => {
+  selectedSprite = btn.dataset.sprite;
+  document.querySelectorAll('.sprite-choice').forEach(choice => choice.classList.toggle('selected', choice === btn));
+  try { localStorage.setItem('gumdropSprite', selectedSprite); } catch (e) {}
+}));
+
+document.getElementById('multiplayerBtn').addEventListener('click', () => {
+  document.getElementById('startScreen').classList.add('hidden'); document.getElementById('multiplayerScreen').classList.remove('hidden');
+  mpSetStatus("Create a room or enter a friend's code."); mpShowRoom(false);
+});
+document.getElementById('mpCreateBtn').addEventListener('click', () => mpConnect('create'));
+document.getElementById('mpJoinBtn').addEventListener('click', () => {
+  const code = document.getElementById('mpRoomInput').value.trim().toUpperCase();
+  if (!/^[A-Z0-9]{4,6}$/.test(code)) { mpSetStatus('Enter a 4–6 character room code.'); return; }
+  mpConnect('join', code);
+});
+document.getElementById('mpStartBtn').addEventListener('click', () => mpSend({ type:'start', level:1 }));
+document.getElementById('mpLeaveBtn').addEventListener('click', mpLeave);
+document.getElementById('mpRoomInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('mpJoinBtn').click(); });
+
+/* ---------- init & loop ---------- */
+(async function init() {
+  try {
+    const savedSprite = localStorage.getItem('gumdropSprite');
+    if (savedSprite && document.querySelector('.sprite-choice[data-sprite="' + savedSprite + '"]')) {
+      selectedSprite = savedSprite;
+      document.querySelectorAll('.sprite-choice').forEach(choice => choice.classList.toggle('selected', choice.dataset.sprite === savedSprite));
+    }
+  } catch (e) {}
+  try {
+    const saved = await loadSavedProgress();
+    if (saved && saved.furthestLevel > 1 && saved.furthestLevel <= 100) {
+      const btn = document.getElementById('continueBtn');
+      btn.classList.remove('hidden');
+      btn.querySelector('.continue-level').textContent = 'Level ' + Math.min(100, saved.furthestLevel);
+    }
+  } catch (e) {}
+  if (TEST_UNLOCK_ALL_LEVELS) document.getElementById('levelSelectBtn').textContent = 'Test any level (temporary)';
+})();
+
+let lastTime = 0;
+function loop(ts) {
+  requestAnimationFrame(loop);
+  if (!lastTime) lastTime = ts;
+  let dt = (ts - lastTime) / (1000 / 60);
+  dt = clamp(dt, 0, 2.2);
+  lastTime = ts;
+  if (state.mode === 'paused' || state.mode === 'menu' || state.mode === 'victory') { render(); return; }
+  state.clock += dt;
+  if (state.mode === 'playing') updatePlayer(dt);
+  updateCamera(dt);
+  updateParticles(dt);
+  mpUpdateRemotes(dt);
+  if (mp.connected && mp.started && state.mode === 'playing' && ts - mp.lastSend > 60) {
+    mp.lastSend = ts; mpSend({ type:'playerUpdate', x:player.x, y:player.y, vx:player.vx, vy:player.vy, facing:player.facing, sprite:selectedSprite, name:'Player' });
+  }
+  render();
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
