@@ -95,7 +95,13 @@
   .difficulty-choice[aria-pressed="true"]{ border-color:var(--mint); background:#205341; box-shadow:0 0 0 2px rgba(111,227,180,.2); }
   .difficulty-help{ max-width:34em; font-size:.78rem; line-height:1.4; margin:3px 0; }
   .difficulty-badge{ margin-left:8px; font:800 .63rem var(--font-body); padding:4px 6px; border-radius:8px; background:rgba(0,0,0,.28); text-transform:uppercase; }
-  #mpDifficultySelect{ padding:7px 12px; margin-top:5px; border-radius:8px; font:700 .9rem var(--font-body); }
+  .mp-settings{ box-sizing:border-box; width:min(360px,88vw); display:flex; flex-direction:column; gap:9px; margin:18px 0 4px; padding:18px; border:2px solid rgba(255,190,216,.22); border-radius:24px; background:linear-gradient(145deg,rgba(255,122,172,.12),rgba(74,26,55,.35)); box-shadow:0 5px 0 rgba(0,0,0,.15); }
+  .mp-settings label{ color:#ffd4e5; font:800 .72rem var(--font-body); letter-spacing:.08em; text-transform:uppercase; text-align:left; }
+  .mp-settings select{ appearance:none; box-sizing:border-box; width:100%; min-height:46px; padding:11px 38px 11px 16px; border:2px solid rgba(255,212,229,.38); border-radius:16px; background-color:#593347; background-image:linear-gradient(45deg,transparent 50%,#ffc95b 50%),linear-gradient(135deg,#ffc95b 50%,transparent 50%); background-position:calc(100% - 21px) 20px,calc(100% - 15px) 20px; background-size:6px 6px; background-repeat:no-repeat; color:#fff6ea; font:800 .9rem var(--font-body); cursor:pointer; }
+  .mp-settings select:hover{ border-color:#ffc95b; }
+  .mp-settings select:focus-visible{ outline:3px solid var(--mint); outline-offset:3px; }
+  .mp-settings option{ background:#452333; color:#fff6ea; }
+  .mp-settings-help{ margin:2px 0 0; color:#f6d8e5; font-size:.75rem; line-height:1.45; text-align:left; }
   #startScreen,#multiplayerScreen{ overflow-y:auto; justify-content:flex-start; }
   #startScreen > *,#multiplayerScreen > *{ flex-shrink:0; }
   #startScreen .title{ margin-top:auto; }
@@ -191,6 +197,11 @@
   .sprite-options{ display:flex; justify-content:center; gap:.48em; flex-wrap:wrap; }
   .sprite-choice{ width:48px; height:48px; border-radius:15px; border:2px solid rgba(255,255,255,.22); background:rgba(255,255,255,.1); color:white; font-size:1.35rem; transition:transform .15s ease, border-color .15s ease, background .15s ease; }
   .sprite-choice:hover,.sprite-choice.selected{ transform:translateY(-3px); border-color:var(--mint); background:rgba(111,227,180,.22); }
+  #mpSprites .sprite-options{ flex-wrap:wrap; justify-content:center; }
+  #mpSprites .sprite-choice{ position:relative; }
+  #mpSprites .sprite-choice:disabled{ opacity:.38; cursor:not-allowed; transform:none; border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.06); }
+  #mpSprites .sprite-choice:disabled::after{ content:'Taken'; position:absolute; bottom:-7px; left:0; right:0; border-radius:6px; background:#452333; color:#fff; font:800 9px var(--font-body); }
+  .peppermint-icon{ display:inline-block; width:29px; height:29px; border-radius:50%; border:2px solid #fff; background:repeating-conic-gradient(#ff426d 0deg 30deg,#fff6ea 30deg 60deg); vertical-align:middle; }
   .jawbreaker-icon{ display:inline-block; position:relative; width:1em; height:1em; vertical-align:middle; border-radius:50%; border:2px solid #eafff4; background:radial-gradient(ellipse at 32% 22%,rgba(255,255,255,.8) 0 10%,transparent 16%),radial-gradient(circle at 65% 80%,#55c68e,#79e2ad 65%); box-shadow:inset -3px -3px 0 rgba(37,126,79,.18); }
   .jawbreaker-icon::before{ content:''; position:absolute; inset:0; background:radial-gradient(circle at 33% 47%,#3a2317 0 6%,transparent 7%),radial-gradient(circle at 65% 47%,#3a2317 0 6%,transparent 7%); }
   .jawbreaker-icon::after{ content:''; position:absolute; width:27%; height:16%; left:35%; top:55%; border-bottom:2px solid #3a2317; border-radius:0 0 50% 50%; }
@@ -301,20 +312,23 @@
         <input id="mpRoomInput" maxlength="6" placeholder="ROOM CODE" aria-label="Room code">
         <button id="mpJoinBtn" class="btn candy-wrap candy-wrap--caramel">Join</button>
       </div>
-      <div class="sprite-picker" aria-label="Choose your multiplayer sprite">
-        <label>Choose your co-op sprite</label>
+      <div id="mpSprites" class="sprite-picker" aria-label="Choose your multiplayer sprite">
+        <label>Choose your co-op sprite · one of each per room</label>
         <div class="sprite-options">
           <button class="sprite-choice selected" data-sprite="gumdrop" aria-label="Gumdrop sprite">🍬</button>
           <button class="sprite-choice" data-sprite="marshmallow" aria-label="Marshmallow sprite">☁️</button>
           <button class="sprite-choice" data-sprite="lollipop" aria-label="Lollipop sprite">🍭</button>
           <button class="sprite-choice" data-sprite="jelly" aria-label="Jawbreaker sprite" title="Jawbreaker"><span class="jawbreaker-icon" aria-hidden="true"></span></button>
+          <button class="sprite-choice" data-sprite="peppermint" aria-label="Peppermint sprite" title="Peppermint"><span class="peppermint-icon" aria-hidden="true"></span></button>
+          <button class="sprite-choice" data-sprite="chocolate" aria-label="Chocolate sprite" title="Chocolate">🍫</button>
         </div>
       </div>
-      <div id="mpLevelPicker" class="sprite-picker hidden">
+      <div id="mpLevelPicker" class="mp-settings hidden">
         <label for="mpLevelSelect">Host starting level</label>
         <select id="mpLevelSelect" aria-label="Multiplayer starting level"></select>
         <label for="mpDifficultySelect">Room difficulty</label>
         <select id="mpDifficultySelect"><option value="hard">Hard mode</option><option value="easy">Easy mode</option></select>
+        <p id="mpDifficultyHelp" class="mp-settings-help" aria-live="polite">Hard: no halfway checkpoints. Disappearing platforms fade faster.</p>
       </div>
       <div class="mp-room-actions">
         <button id="mpCreateBtn" class="btn candy-wrap candy-wrap--raspberry">Create Room</button>
@@ -1691,20 +1705,33 @@ function resetPlayer(x, y) {
     groundRef: null, groundSurface: 'normal', iceBoost: false, coyote: 0, facing: 1, squash: 1, walkPhase: 0, doubleJumpReady: false };
 }
 function mpSetStatus(text) { const el = document.getElementById('mpStatus'); if (el) el.textContent = text; }
+function mpDifficultyHelp() {
+  const easy = document.getElementById('mpDifficultySelect').value === 'easy';
+  document.getElementById('mpDifficultyHelp').textContent = easy
+    ? (mp.connected && !mp.supportsModes ? 'Easy mode needs the updated multiplayer server included in the ZIP. Replace the server and restart it to play Easy together.' : 'Easy: halfway checkpoints, longer-lasting platforms and slower projectiles.')
+    : 'Hard: no halfway checkpoints. Disappearing platforms fade faster.';
+}
 function mpShowRoom(show) {
   document.getElementById('mpRoomCode').classList.toggle('hidden', !show);
   document.getElementById('mpPlayers').classList.toggle('hidden', !show);
 }
 function mpRenderPlayers(players) {
+  const self = players.find(p => p.id === mp.id);
+  if (self && self.sprite) selectedSprite = self.sprite;
+  document.querySelectorAll('.sprite-choice').forEach(choice => {
+    choice.classList.toggle('selected', choice.dataset.sprite === selectedSprite);
+    choice.disabled = mp.connected && players.some(p => p.id !== mp.id && p.sprite === choice.dataset.sprite);
+  });
   const el = document.getElementById('mpPlayers'); if (!el) return;
   el.replaceChildren();
   players.forEach(p => {
     const row = document.createElement('div'); row.className = 'mp-player';
     const label = document.createElement('span');
-    label.textContent = cleanPlayerName(p.name) + (p.id === mp.id ? ' (You)' : '') + (p.host ? ' ⭐' : '');
+    const candyNames = {gumdrop:'Gumdrop',marshmallow:'Marshmallow',lollipop:'Lollipop',jelly:'Jawbreaker',peppermint:'Peppermint',chocolate:'Chocolate'};
+    label.textContent = cleanPlayerName(p.name) + (p.id === mp.id ? ' (You)' : '') + (p.host ? ' ⭐' : '') + (candyNames[p.sprite] ? ' · ' + candyNames[p.sprite] : '');
     const ready = document.createElement('span'); ready.textContent = p.ready ? '✓' : '';
     row.appendChild(label); row.appendChild(ready); el.appendChild(row);
-    if (mp.remotes[p.id]) mp.remotes[p.id].name = cleanPlayerName(p.name);
+    if (mp.remotes[p.id]) { mp.remotes[p.id].name = cleanPlayerName(p.name); if (p.sprite) mp.remotes[p.id].sprite = p.sprite; }
   });
   el.classList.remove('hidden');
 }
@@ -1717,20 +1744,22 @@ function mpConnect(action, roomCode) {
   if (mp.ws) { try { mp.ws.close(); } catch(e){} }
   mpSetStatus('Connecting…');
   const ws = new WebSocket(mpSocketUrl()); mp.ws = ws;
-  ws.addEventListener('open', () => ws.send(JSON.stringify({ type: action, room: roomCode || '', name:selectedPlayerName, difficulty:menuDifficulty, supportsModes:true })));
+  ws.addEventListener('open', () => ws.send(JSON.stringify({ type: action, room: roomCode || '', name:selectedPlayerName, sprite:selectedSprite, difficulty:menuDifficulty, supportsModes:true })));
   ws.addEventListener('message', e => {
     let msg; try { msg = JSON.parse(e.data); } catch(e) { return; }
     if (msg.type === 'welcome') {
       mp.supportsModes = msg.supportsModes === true;
       mp.difficulty = mp.supportsModes && msg.difficulty === 'easy' ? 'easy' : 'hard';
       document.getElementById('mpDifficultySelect').value = mp.difficulty;
-      document.getElementById('mpDifficultySelect').disabled = !mp.supportsModes;
+      document.getElementById('mpDifficultySelect').disabled = false;
       mp.id = msg.id; mp.room = msg.room; mp.host = !!msg.host; mp.connected = true; mp.started = !!msg.started; mp.completedLevel = null; mp.remotes = {};
+      mpDifficultyHelp();
       document.getElementById('mpRoomCode').textContent = msg.room;
       document.getElementById('mpStartBtn').classList.toggle('hidden', !mp.host || mp.started);
       document.getElementById('mpLevelPicker').classList.toggle('hidden', !mp.host || mp.started);
       mpSetStatus(mp.started ? `${mp.difficulty === 'easy' ? 'Easy' : 'Hard'} mode — level ${msg.level}` : (!mp.supportsModes ? 'This older server supports Hard mode only. Use the updated server for Easy rooms.' : (mp.host ? 'Choose the room mode and share your code.' : 'Waiting for the host to choose a mode and start…')));
       mpShowRoom(true); mpRenderPlayers(msg.players || []);
+      if (!msg.supportsUniqueSprites) mpSetStatus('Update and restart the server from the new ZIP to reserve unique candy sprites.');
       if (msg.started) mpStartLevel(msg.level);
     } else if (msg.type === 'players') {
       mpRenderPlayers(msg.players || []);
@@ -1764,6 +1793,7 @@ function mpLeave() {
   hideCheckpointNotice();
   if (mp.ws) { try { mp.ws.close(); } catch(e){} }
   mp.ws = null; mp.connected = false; mp.started = false; mp.id = null; mp.room = null; mp.host = false; mp.remotes = {}; mp.completedLevel = null;
+  document.querySelectorAll('.sprite-choice').forEach(choice => { choice.disabled = false; });
   document.getElementById('mpBadge').classList.add('hidden');
   document.getElementById('multiplayerScreen').classList.add('hidden'); document.getElementById('startScreen').classList.remove('hidden');
   state.mode = 'menu'; state.runToken++; state.difficulty = menuDifficulty; refreshModeMenu();
@@ -1775,6 +1805,32 @@ function mpUpdateRemotes(dt) {
   document.getElementById('mpBadge')?.classList.toggle('hidden', !mp.connected);
   if (mp.connected) document.getElementById('mpBadge').textContent = `👥 ${Object.keys(mp.remotes).length + 1}`;
 }
+function drawExtraCandy(sprite) {
+  if (sprite === 'peppermint') {
+    for (let i = 0; i < 12; i++) {
+      ctx.fillStyle = i % 2 ? '#fff6ea' : '#ff426d';
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,16,i*Math.PI/6,(i+1)*Math.PI/6); ctx.closePath(); ctx.fill();
+    }
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,16,0,Math.PI*2); ctx.stroke();
+  } else {
+    roundRectPath(-14,-18,28,36,5); ctx.fillStyle='#613222'; ctx.fill(); ctx.strokeStyle='#e7ab78';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#a6663f'; for(let y=-14;y<10;y+=12) for(let x=-10;x<10;x+=11) { roundRectPath(x,y,9,10,2);ctx.fill(); }
+    ctx.fillStyle='#ed77a3';ctx.fillRect(-14,7,28,11);
+  }
+  ctx.fillStyle='#26150f';ctx.beginPath();ctx.arc(-6,-3,2.2,0,Math.PI*2);ctx.arc(5,-3,2.2,0,Math.PI*2);ctx.fill();
+}
+function drawPlayerName(name, x, y) {
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.font = '800 18px "Quicksand", "Segoe UI", sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.lineJoin = 'round'; ctx.lineWidth = 4;
+  ctx.strokeStyle = '#fff'; ctx.fillStyle = '#000';
+  const label = cleanPlayerName(name);
+  ctx.strokeText(label, x, y, 220);
+  ctx.fillText(label, x, y, 220);
+  ctx.restore();
+}
 function drawRemotePlayer(r) {
   const x = r.x + PLAYER_W / 2, y = r.y + PLAYER_H / 2;
   ctx.save(); ctx.translate(x,y);
@@ -1783,12 +1839,15 @@ function drawRemotePlayer(r) {
   ctx.globalAlpha = .95; ctx.fillStyle = remoteSprite[1]; ctx.beginPath(); ctx.arc(0,0,17,0,Math.PI*2); ctx.fill();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
   ctx.fillStyle = '#4b2454'; ctx.font = '18px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  if(r.sprite==='jelly') {
+  if(r.sprite==='peppermint' || r.sprite==='chocolate') {
+    drawExtraCandy(r.sprite);
+    ctx.strokeStyle='#3a2317';ctx.lineWidth=2;ctx.beginPath();ctx.arc(-1,4,4,.15*Math.PI,.85*Math.PI);ctx.stroke();
+  } else if(r.sprite==='jelly') {
     ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.ellipse(-5,-8,5,3,0,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#3a2317';ctx.beginPath();ctx.arc(4,-2,2.2,0,Math.PI*2);ctx.arc(-6,-2,2.2,0,Math.PI*2);ctx.fill();
     ctx.strokeStyle='#3a2317';ctx.lineWidth=2;ctx.beginPath();ctx.arc(-1,4,4,.15*Math.PI,.85*Math.PI);ctx.stroke();
   } else ctx.fillText(remoteSprite[0],0,1);
-  ctx.fillStyle = '#fff'; ctx.font = '700 11px var(--font-body)'; ctx.textAlign='center'; ctx.fillText(r.name || 'Player',0,-22);
+  drawPlayerName(r.name, 0, -24);
   ctx.restore();
 }
 
@@ -2609,7 +2668,9 @@ function drawPlayer() {
   ctx.scale(player.facing, 1);
   ctx.scale(1 / Math.sqrt(player.squash), player.squash);
   const eye = () => { ctx.fillStyle='#3a2317'; ctx.beginPath(); ctx.arc(4,-2,2.2,0,Math.PI*2); ctx.arc(-6,-2,2.2,0,Math.PI*2); ctx.fill(); };
-  if (selectedSprite === 'lollipop') {
+  if (selectedSprite === 'peppermint' || selectedSprite === 'chocolate') {
+    drawExtraCandy(selectedSprite);
+  } else if (selectedSprite === 'lollipop') {
     ctx.strokeStyle='#fff4df'; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(0,10); ctx.lineTo(0,19); ctx.stroke();
     ctx.fillStyle='#ff5e9b'; ctx.beginPath(); ctx.arc(0,-3,14,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='#fff'; ctx.lineWidth=3; for(let r=3;r<14;r+=4){ctx.beginPath();ctx.arc(0,-3,r,0,Math.PI*2);ctx.stroke();} eye();
@@ -2653,8 +2714,7 @@ function render() {
     for (const r of Object.values(mp.remotes)) drawRemotePlayer(r);
     drawPlayer();
     if (mp.connected && mp.started) {
-      ctx.save(); ctx.fillStyle = '#fff'; ctx.font = '700 11px var(--font-body)'; ctx.textAlign = 'center';
-      ctx.fillText(selectedPlayerName, player.x + player.w / 2, player.y - 10, 140); ctx.restore();
+      drawPlayerName(selectedPlayerName, player.x + player.w / 2, player.y - 10);
     }
   }
   ctx.restore();
@@ -2829,6 +2889,8 @@ document.getElementById('playAgainBtn').addEventListener('click', async () => {
   beginGame(1, 0);
 });
 document.querySelectorAll('.sprite-choice').forEach(btn => btn.addEventListener('click', () => {
+  if (btn.disabled) return;
+  if (mp.connected) { mpSend({type:'setSprite', sprite:btn.dataset.sprite}); return; }
   selectedSprite = btn.dataset.sprite;
   document.querySelectorAll('.sprite-choice').forEach(choice => choice.classList.toggle('selected', choice.dataset.sprite === selectedSprite));
   try { localStorage.setItem('gumdropSprite', selectedSprite); } catch (e) {}
@@ -2845,11 +2907,18 @@ document.getElementById('mpJoinBtn').addEventListener('click', () => {
   mpConnect('join', code);
 });
 document.getElementById('mpStartBtn').addEventListener('click', () => {
+  if (!mp.host || mp.started) return;
   const level = Math.max(1, Math.min(100, Number(document.getElementById('mpLevelSelect').value) || 1));
-  const difficulty = mp.supportsModes && document.getElementById('mpDifficultySelect').value === 'easy' ? 'easy' : 'hard';
+  const difficulty = document.getElementById('mpDifficultySelect').value === 'easy' ? 'easy' : 'hard';
+  if (difficulty === 'easy' && !mp.supportsModes) {
+    mpDifficultyHelp();
+    mpSetStatus('Update and restart the included multiplayer server to start an Easy room.');
+    return;
+  }
   mpSend({ type:'start', level, difficulty });
 });
 document.getElementById('mpLeaveBtn').addEventListener('click', mpLeave);
+document.getElementById('mpDifficultySelect').addEventListener('change', mpDifficultyHelp);
 document.getElementById('mpNameInput').addEventListener('change', savePlayerName);
 document.getElementById('mpRoomInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('mpJoinBtn').click(); });
 
