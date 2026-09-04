@@ -186,6 +186,12 @@
 
   /* ---------- pause screen list ---------- */
   .pause-actions{ display:flex; flex-direction:column; gap:.6em; margin-top:1em; width:min(280px,80vw); }
+  .settings-panel{ width:min(430px,88vw); padding:24px; border-radius:26px; border:2px solid rgba(255,212,229,.22); background:linear-gradient(145deg,rgba(89,51,71,.9),rgba(34,14,27,.94)); box-shadow:0 18px 50px rgba(0,0,0,.4); }
+  .zoom-setting{ margin:1.4em 0 1.1em; padding:18px; border-radius:19px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); }
+  .zoom-setting label{ display:flex; justify-content:space-between; gap:16px; margin-bottom:13px; color:#ffd4e5; font-weight:800; }
+  .zoom-setting input{ width:100%; accent-color:var(--raspberry); cursor:pointer; }
+  .zoom-help{ margin:.7em 0 0; font-size:.76rem; line-height:1.45; opacity:.7; }
+  .settings-actions{ display:flex; flex-wrap:wrap; justify-content:center; gap:.65em; }
 
   /* ---------- touch controls ---------- */
   .touch-controls{ display:none; position:absolute; left:0; right:0; bottom:0; z-index:25; padding:0 18px max(18px, env(safe-area-inset-bottom)); align-items:flex-end; justify-content:space-between; pointer-events:none; }
@@ -196,6 +202,12 @@
   .touch-actions{ display:flex; align-items:flex-end; gap:12px; pointer-events:auto; }
   .touch-jump{ width:74px; height:74px; font-size:1.7rem; pointer-events:auto; background:rgba(255,63,110,.4); border-color:rgba(255,255,255,.35); }
   .touch-push{ background:rgba(255,190,72,.48); border-color:rgba(255,255,255,.4); }
+  .touch-flight-down{ display:none; background:rgba(111,182,255,.48); }
+  body.touch-flight-active .touch-flight-down{ display:flex; }
+  .touch-secret-flight{ display:none; width:28px; height:28px; padding:0; flex:0 0 28px; border-radius:50%; border:1px solid rgba(210,255,238,.38); background:rgba(111,227,180,.18); color:rgba(255,255,255,.7); font-size:.72rem; opacity:.72; box-shadow:0 0 8px rgba(111,227,180,.16); }
+  body.touch .touch-secret-flight{ display:flex; }
+  @media (hover:none) and (pointer:coarse){ .touch-secret-flight{ display:flex; } }
+  .touch-secret-flight.active{ color:#fff; border-color:rgba(255,221,125,.72); background:rgba(255,190,72,.34); opacity:1; box-shadow:0 0 12px rgba(255,190,72,.35); }
   .sprite-picker{ margin-top:1.3em; }
   .sprite-picker label{ display:block; font-size:.73rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; opacity:.75; margin-bottom:.5em; }
   .sprite-options{ display:flex; justify-content:center; gap:.48em; flex-wrap:wrap; }
@@ -254,6 +266,7 @@
       <button class="icon-btn" id="muteBtn" aria-label="Mute sound">🔊</button>
       <button class="icon-btn" id="hudFullscreenBtn" aria-label="Enter fullscreen" title="Fullscreen">⛶</button>
       <button class="icon-btn" id="pauseBtn" aria-label="Pause">❚❚</button>
+      <button id="btnTouchFlight" class="icon-btn touch-secret-flight" aria-label="Turn flight on" aria-pressed="false">✈</button>
     </div>
   </div>
 
@@ -272,6 +285,7 @@
     <div class="menu-tools" aria-label="Settings">
       <button id="controllerSettingsBtn" class="btn btn-ghost">🎮 Controller settings</button>
       <button id="keyboardSettingsBtn" class="btn btn-ghost">⌨ Key bind settings</button>
+      <button id="gameSettingsBtn" class="btn btn-ghost">⚙ Game settings</button>
       <button id="menuFullscreenBtn" class="btn btn-ghost">⛶ Fullscreen</button>
     </div>
     <div id="menuSprites" class="sprite-picker" aria-label="Choose your player sprite">
@@ -377,6 +391,7 @@
       <button id="restartLevelBtn" class="btn btn-ghost">Restart Level</button>
       <button id="pauseControllerBtn" class="btn btn-ghost">🎮 Controller settings</button>
       <button id="pauseKeyboardBtn" class="btn btn-ghost">⌨ Key bind settings</button>
+      <button id="pauseGameSettingsBtn" class="btn btn-ghost">⚙ Game settings</button>
       <button id="pauseFullscreenBtn" class="btn btn-ghost">⛶ Fullscreen</button>
       <button id="quitBtn" class="btn btn-ghost">Quit to Menu</button>
     </div>
@@ -412,6 +427,21 @@
     </div>
   </div>
 
+  <div id="gameSettingsScreen" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="gameSettingsTitle">
+    <div class="settings-panel">
+      <div class="title" id="gameSettingsTitle" style="font-size:2.2rem;">Game Settings</div>
+      <div class="zoom-setting">
+        <label for="gameZoom"><span>Game zoom</span><span id="gameZoomValue">100%</span></label>
+        <input id="gameZoom" type="range" min="60" max="160" step="5" value="100" aria-label="Game zoom percentage">
+        <p class="zoom-help">Move left to see more of the level, or right to make the game larger.</p>
+      </div>
+      <div class="settings-actions">
+        <button id="resetZoomBtn" class="btn btn-ghost">Reset to 100%</button>
+        <button id="closeGameSettingsBtn" class="btn candy-wrap candy-wrap--mint">Back</button>
+      </div>
+    </div>
+  </div>
+
   <div id="victoryScreen" class="screen hidden">
     <div class="title">The Gauntlet is Yours!</div>
     <div class="subtitle" id="victoryMode">All 10 candy worlds. All 100 levels. Sweet victory.</div>
@@ -429,6 +459,7 @@
     </div>
     <div class="touch-actions">
       <button id="btnPush" class="touch-btn touch-push" aria-label="Push another player">✋</button>
+      <button id="btnFlightDown" class="touch-btn touch-flight-down" aria-label="Fly downward">▼</button>
       <button id="btnJump" class="touch-btn touch-jump" aria-label="Jump">⤴</button>
     </div>
   </div>
@@ -1230,6 +1261,7 @@ const input = { left: false, right: false, jump: false, jumpBuffer: 0 };
 const keyboardInput = { left:false, right:false, jump:false };
 const touchInput = { left:false, right:false, jump:false };
 const controllerInput = { left:false, right:false, jump:false };
+let secretFlight = false, keyboardFlightDown = false, touchFlightDown = false;
 const heldKeys = new Set();
 const heldKeyCodes = new Map();
 function mergeInputs(allowJump = true) {
@@ -1301,7 +1333,7 @@ window.addEventListener('keydown', e => {
     saveKeyBindings();
     controllerFocus(document.getElementById('keyboardBindings').children[Object.keys(KEY_ACTIONS).indexOf(action)]);return;
   }
-  const settingsScreen=['keyboardScreen','controllerScreen'].map(id=>document.getElementById(id)).find(el=>!el.classList.contains('hidden'));
+  const settingsScreen=['keyboardScreen','controllerScreen','gameSettingsScreen'].map(id=>document.getElementById(id)).find(el=>!el.classList.contains('hidden'));
   if (e.key === 'Tab' && settingsScreen) {
     const items = Array.from(settingsScreen.querySelectorAll('button,input,select')).filter(el => !el.disabled && el.getClientRects().length);
     if (items.length) { const index = items.indexOf(document.activeElement); controllerFocus(items[(index + (e.shiftKey ? -1 : 1) + items.length) % items.length]); e.preventDefault(); }
@@ -1311,7 +1343,10 @@ window.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !document.getElementById('controllerScreen').classList.contains('hidden')) {
     e.preventDefault(); if (controller.capture) cancelControllerBinding(); else closeControllerSettings(); return;
   }
+  if (e.key === 'Escape' && !document.getElementById('gameSettingsScreen').classList.contains('hidden')) { e.preventDefault(); closeGameSettings(); return; }
   if (e.target && (['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable)) return;
+  if (e.ctrlKey && (e.code === 'KeyO' || e.key.toLowerCase() === 'o')) { e.preventDefault(); if (!e.repeat) toggleSecretFlight(true); return; }
+  if (secretFlight && (e.key === 'ArrowDown' || e.key.toLowerCase() === 's')) { keyboardFlightDown = true; e.preventDefault(); return; }
   if(e.ctrlKey||e.altKey||e.metaKey)return;
   const key=e.key.toLowerCase();
   if ([...keyBindings.left,...keyBindings.right,...keyBindings.jump].includes(key)) {
@@ -1324,6 +1359,7 @@ window.addEventListener('keydown', e => {
   else if ((key === 'escape' || keyBindings.pause.includes(key)) && !e.repeat) { e.preventDefault();togglePause(); }
 });
 window.addEventListener('keyup', e => {
+  if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') keyboardFlightDown = false;
   const released=(e.code&&heldKeyCodes.get(e.code))||e.key.toLowerCase();
   if(e.code)heldKeyCodes.delete(e.code);
   if(!Array.from(heldKeyCodes.values()).includes(released))heldKeys.delete(released);
@@ -1340,6 +1376,8 @@ for (const [id, action] of [['btnLeft','left'],['btnRight','right'],['btnJump','
   bindTouchBtn(document.getElementById(id), () => { touchInput[action] = true; mergeInputs(); }, () => { touchInput[action] = false; mergeInputs(); });
 }
 document.getElementById('btnPush').addEventListener('pointerdown', e => { e.preventDefault(); tryPushPlayer(); });
+bindTouchBtn(document.getElementById('btnFlightDown'), () => { if (secretFlight) touchFlightDown = true; }, () => touchFlightDown = false);
+document.getElementById('btnTouchFlight').addEventListener('pointerdown', e => { e.preventDefault(); toggleSecretFlight(false); });
 
 /* ---------- controllers: browser-standard layout + per-device remapping ---------- */
 const CONTROLLER_ACTIONS = {left:'Move left',right:'Move right',up:'Menu up',down:'Menu down',jump:'Jump / Choose',push:'Push player',back:'Menu back',pause:'Pause / Resume',retry:'Retry level'};
@@ -1433,6 +1471,7 @@ function resetInputSources() {
   heldKeys.clear();
   heldKeyCodes.clear();
   for (const source of [keyboardInput,touchInput,controllerInput]) source.left = source.right = source.jump = false;
+  keyboardFlightDown = false; touchFlightDown = false;
   input.jumpBuffer = 0; mergeInputs(false); controller.neutral = true;
 }
 function controllerFocus(el) {
@@ -1450,12 +1489,13 @@ function closeControllerSettings() {
   controllerFocus(null); controller.screen = null;
 }
 function activeControllerScreen() {
-  return ['keyboardScreen','controllerScreen','pauseScreen','victoryScreen','mpLevelScreen','levelSelectScreen','multiplayerScreen','startScreen']
+  return ['keyboardScreen','controllerScreen','gameSettingsScreen','pauseScreen','victoryScreen','mpLevelScreen','levelSelectScreen','multiplayerScreen','startScreen']
     .map(id => document.getElementById(id)).find(el => !el.classList.contains('hidden'));
 }
 function controllerMenuBack(screen) {
   if(screen.id==='keyboardScreen'){if(keyCapture)cancelKeyBinding();else closeKeyboardSettings();return;}
   if (screen.id === 'controllerScreen') closeControllerSettings();
+  else if (screen.id === 'gameSettingsScreen') closeGameSettings();
   else if (screen.id === 'pauseScreen') togglePause();
   else if (screen.id === 'levelSelectScreen') document.getElementById('closeLevelSelectBtn').click();
   else if (screen.id === 'mpLevelScreen') document.getElementById('mpCloseLevelBtn').click();
@@ -1517,7 +1557,7 @@ function pollController(ts) {
     controllerInput.left = controllerInput.right = controllerInput.jump = false; mergeInputs(false);
     if (controller.screen !== screen) {
       controller.screen = screen; controller.direction = '';
-      const defaultIds = {startScreen:'startBtn',pauseScreen:'resumeBtn',keyboardScreen:'keyboardCloseBtn',controllerScreen:'controllerSelect',levelSelectScreen:'closeLevelSelectBtn',mpLevelScreen:'mpChangeLevelBtn',multiplayerScreen:'mpCreateBtn',victoryScreen:'playAgainBtn'};
+      const defaultIds = {startScreen:'startBtn',pauseScreen:'resumeBtn',keyboardScreen:'keyboardCloseBtn',controllerScreen:'controllerSelect',gameSettingsScreen:'gameZoom',levelSelectScreen:'closeLevelSelectBtn',mpLevelScreen:'mpChangeLevelBtn',multiplayerScreen:'mpCreateBtn',victoryScreen:'playAgainBtn'};
       const preferred = document.getElementById(defaultIds[screen.id]);
       controllerFocus(preferred && !preferred.disabled && preferred.getClientRects().length ? preferred : null);
     }
@@ -1760,6 +1800,7 @@ function savePlayerName() {
 }
 let menuDifficulty = 'hard', modeMenuRequest = 0, checkpointNoticeToken = 0;
 let player = {};
+let gameZoom = 1, gameSettingsReturn = 'menu';
 const mp = { ws:null, id:null, room:null, host:false, connected:false, started:false, supportsModes:false, supportsLevelChange:false, difficulty:'hard', lastSend:0, completedLevel:null, remotes:{} };
 let lastPushAt = -Infinity;
 let pendingMpLevel = 1;
@@ -1767,6 +1808,18 @@ let pendingMpLevel = 1;
 function resetPlayer(x, y) {
   player = { x, y, vx: 0, vy: 0, w: PLAYER_W, h: PLAYER_H, onGround: false, wasOnGround: false,
     groundRef: null, groundSurface: 'normal', iceBoost: false, coyote: 0, facing: 1, squash: 1, walkPhase: 0, doubleJumpReady: false };
+}
+function toggleSecretFlight(allowKeyboard = false) {
+  if (!allowKeyboard && !document.body.classList.contains('touch')) return false;
+  secretFlight = !secretFlight;
+  if (Number.isFinite(player.x)) { player.vx=0; player.vy=0; player.onGround=false; player.groundRef=null; }
+  keyboardFlightDown=false; touchFlightDown=false; input.jumpBuffer=0;
+  document.body.classList.toggle('touch-flight-active',secretFlight);
+  const button=document.getElementById('btnTouchFlight');
+  button.classList.toggle('active',secretFlight);button.setAttribute('aria-pressed',secretFlight?'true':'false');
+  button.setAttribute('aria-label',secretFlight?'Turn flight off':'Turn flight on');
+  showDeathFlash(secretFlight?(allowKeyboard?'SECRET FLIGHT ON — W/↑ UP · S/↓ DOWN':'TOUCH FLIGHT ON — ⤴ UP · ▼ DOWN'):'FLIGHT OFF');
+  return true;
 }
 function mpSetStatus(text) { const el = document.getElementById('mpStatus'); if (el) el.textContent = text; }
 function mpDifficultyHelp() {
@@ -2250,11 +2303,25 @@ function collectPowerups() {
 }
 
 /* ---------- player update ---------- */
+function updateSecretFlight(dt) {
+  const speed=7.5;
+  const horizontal=(input.right?1:0)-(input.left?1:0);
+  const vertical=((keyboardFlightDown||touchFlightDown)?1:0)-(input.jump?1:0);
+  player.vx=horizontal*speed;player.vy=vertical*speed;
+  if(horizontal)player.facing=horizontal;
+  player.x+=player.vx*dt;player.y+=player.vy*dt;
+  player.onGround=false;player.wasOnGround=false;player.groundRef=null;player.groundSurface='normal';player.coyote=0;player.iceBoost=false;input.jumpBuffer=0;
+  player.squash+=(1-player.squash)*Math.min(1,.25*dt);
+  collectPowerups();activateHalfwayCheckpoint();
+  const goalPlat=state.level.platforms[state.level.platforms.length-1];
+  if(aabb(player,{x:goalPlat.x,y:goalPlat.y-40,w:goalPlat.w,h:goalPlat.h+40}))completeLevel();
+}
 function updatePlayer(dt) {
   const lvl = state.level;
   const beforeCrusherStep={x:player.x,y:player.y,w:player.w,h:player.h};
   updateCrushers(dt);
   updateLaunchers(dt);
+  if(secretFlight){updateSecretFlight(dt);return;}
   const onIce = player.onGround && player.groundSurface === 'slippery';
   const direction = (input.right ? 1 : 0) - (input.left ? 1 : 0);
   let targetSpeed = onIce ? ICE_MAX_SPEED : MOVE_SPEED;
@@ -2844,7 +2911,9 @@ function render() {
   const lvl = state.level, cfg = TIERS[lvl.tier];
   drawBackground(w, h, cfg);
   ctx.save();
-  ctx.translate(Math.round(w / 2 - state.camera.x), Math.round(h / 2 - state.camera.y));
+  ctx.translate(Math.round(w/2),Math.round(h/2));
+  ctx.scale(gameZoom,gameZoom);
+  ctx.translate(-Math.round(state.camera.x),-Math.round(state.camera.y));
   drawLevelScenery(lvl,cfg);
   for (const p of lvl.platforms) drawPlatform(p, cfg);
   for (const hz of lvl.hazards) drawHazard(hz);
@@ -2904,9 +2973,26 @@ function showDeathFlash(text) {
   setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.classList.add('hidden'), 300); }, 480);
 }
 function togglePause() {
-  if (!document.getElementById('controllerScreen').classList.contains('hidden') || !document.getElementById('keyboardScreen').classList.contains('hidden')) return;
+  if (!document.getElementById('controllerScreen').classList.contains('hidden') || !document.getElementById('keyboardScreen').classList.contains('hidden') || !document.getElementById('gameSettingsScreen').classList.contains('hidden')) return;
   if (state.mode === 'playing') { resetInputSources(); state.mode = 'paused'; document.getElementById('pauseScreen').classList.remove('hidden'); }
   else if (state.mode === 'paused') { resetInputSources(); state.mode = 'playing'; document.getElementById('pauseScreen').classList.add('hidden'); }
+}
+function setGameZoom(percent,save=true){
+  const safe=clamp(Math.round(Number(percent)/5)*5,60,160);gameZoom=safe/100;
+  document.getElementById('gameZoom').value=safe;document.getElementById('gameZoomValue').textContent=safe+'%';
+  if(save)try{localStorage.setItem('gumdropGameZoom',String(safe));}catch(e){}
+}
+function openGameSettings(){
+  if(state.mode==='playing')togglePause();
+  gameSettingsReturn=state.mode==='paused'?'paused':'menu';
+  document.getElementById(gameSettingsReturn==='paused'?'pauseScreen':'startScreen').classList.add('hidden');
+  document.getElementById('gameSettingsScreen').classList.remove('hidden');controller.screen=null;
+  controllerFocus(document.getElementById('gameZoom'));
+}
+function closeGameSettings(){
+  document.getElementById('gameSettingsScreen').classList.add('hidden');
+  document.getElementById(gameSettingsReturn==='paused'?'pauseScreen':'startScreen').classList.remove('hidden');
+  controllerFocus(null);controller.screen=null;
 }
 function restartLevel() {
   state.runToken++;
@@ -3022,6 +3108,11 @@ document.getElementById('muteBtn').addEventListener('click', (e) => {
   if (!muted) musicScheduler();
 });
 document.getElementById('pauseBtn').addEventListener('click', togglePause);
+document.getElementById('gameSettingsBtn').addEventListener('click',openGameSettings);
+document.getElementById('pauseGameSettingsBtn').addEventListener('click',openGameSettings);
+document.getElementById('closeGameSettingsBtn').addEventListener('click',closeGameSettings);
+document.getElementById('resetZoomBtn').addEventListener('click',()=>setGameZoom(100));
+document.getElementById('gameZoom').addEventListener('input',e=>setGameZoom(e.target.value));
 function selectMpLevel(level) {
   pendingMpLevel = Math.max(1, Math.min(100, Number(level) || 1));
   document.getElementById('mpInGameLevelGrid').querySelectorAll('.level-choice').forEach(button => button.classList.toggle('current', Number(button.dataset.level) === pendingMpLevel));
@@ -3098,6 +3189,8 @@ document.getElementById('mpRoomInput').addEventListener('keydown', e => { if (e.
 
 /* ---------- init & loop ---------- */
 (async function init() {
+  let savedZoom=100;try{savedZoom=Number(localStorage.getItem('gumdropGameZoom'))||100;}catch(e){}
+  setGameZoom(savedZoom,false);
   try { selectedPlayerName = cleanPlayerName(localStorage.getItem('gumdropPlayerName')); } catch (e) {}
   document.getElementById('mpNameInput').value = selectedPlayerName;
   const multiplayerLevelSelect = document.getElementById('mpLevelSelect');
