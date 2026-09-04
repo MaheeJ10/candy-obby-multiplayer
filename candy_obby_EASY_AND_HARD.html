@@ -159,6 +159,8 @@
   .death-counter{ font-weight:700; font-size:.85rem; background:rgba(0,0,0,.35); padding:.35em .7em; border-radius:999px; white-space:nowrap; }
   .power-badge{ font-weight:800; font-size:.76rem; background:rgba(37,15,47,.62); border:1px solid rgba(255,255,255,.22); padding:.38em .75em; border-radius:999px; white-space:nowrap; color:#fff6ea; }
   .icon-btn{ width:38px; height:38px; border-radius:50%; background:rgba(0,0,0,.35); color:var(--sugar); font-size:1rem; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.15); }
+  .level-jump-btn{ width:auto; padding:0 11px; gap:5px; border-radius:999px; font:800 .72rem var(--font-body); }
+  @media(max-width:760px){ .level-jump-label{ display:none; } .level-jump-btn{ width:38px; padding:0; } }
   .icon-btn:active{ transform:scale(.92); }
 
   /* ---------- zone banner ---------- */
@@ -191,7 +193,9 @@
   .touch-move{ display:flex; gap:12px; pointer-events:auto; }
   .touch-btn{ width:60px; height:60px; border-radius:50%; background:rgba(20,8,16,.55); border:2px solid rgba(255,255,255,.25); color:var(--sugar); font-size:1.4rem; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(3px); }
   .touch-btn:active{ background:rgba(255,63,110,.55); transform:scale(.94); }
+  .touch-actions{ display:flex; align-items:flex-end; gap:12px; pointer-events:auto; }
   .touch-jump{ width:74px; height:74px; font-size:1.7rem; pointer-events:auto; background:rgba(255,63,110,.4); border-color:rgba(255,255,255,.35); }
+  .touch-push{ background:rgba(255,190,72,.48); border-color:rgba(255,255,255,.4); }
   .sprite-picker{ margin-top:1.3em; }
   .sprite-picker label{ display:block; font-size:.73rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; opacity:.75; margin-bottom:.5em; }
   .sprite-options{ display:flex; justify-content:center; gap:.48em; flex-wrap:wrap; }
@@ -242,11 +246,13 @@
       <div class="level-badge candy-wrap candy-wrap--raspberry"><span id="levelNum">1</span><span class="of">/100</span><span class="difficulty-badge" id="difficultyBadge">Hard</span></div>
       <div class="zone-label" id="zoneLabel">Gumdrop Garden</div>
     </div>
-    <div class="hud-progress"><div class="progress-track"><div class="progress-fill" id="progressFill"></div></div></div>
+    <div class="hud-progress" aria-label="Level progress"><div class="progress-track" id="levelProgressTrack" role="progressbar" aria-label="Progress through this level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill" id="progressFill"></div></div></div>
     <div class="hud-right">
       <div class="power-badge" id="powerBadge">No power-up</div><div class="mp-badge hidden" id="mpBadge">👥 Solo</div>
+      <button class="icon-btn level-jump-btn hidden" id="mpInGameLevelBtn" aria-label="Change co-op level" title="Change co-op level">🗺️ <span class="level-jump-label">Levels</span></button>
       <div class="death-counter">💀 <span id="deathCount">0</span></div>
       <button class="icon-btn" id="muteBtn" aria-label="Mute sound">🔊</button>
+      <button class="icon-btn" id="hudFullscreenBtn" aria-label="Enter fullscreen" title="Fullscreen">⛶</button>
       <button class="icon-btn" id="pauseBtn" aria-label="Pause">❚❚</button>
     </div>
   </div>
@@ -266,6 +272,7 @@
     <div class="menu-tools" aria-label="Settings">
       <button id="controllerSettingsBtn" class="btn btn-ghost">🎮 Controller settings</button>
       <button id="keyboardSettingsBtn" class="btn btn-ghost">⌨ Key bind settings</button>
+      <button id="menuFullscreenBtn" class="btn btn-ghost">⛶ Fullscreen</button>
     </div>
     <div id="menuSprites" class="sprite-picker" aria-label="Choose your player sprite">
       <label>Choose your candy sprite</label>
@@ -350,6 +357,19 @@
     </div>
   </div>
 
+  <div id="mpLevelScreen" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="mpLevelTitle">
+    <div class="level-select-panel">
+      <div class="title" id="mpLevelTitle">Co-op Candy Map</div>
+      <div class="subtitle">Choose a level for everyone in the room</div>
+      <p class="level-select-copy">Only the room host can move the group. Your room, players, sprites and difficulty stay the same.</p>
+      <div class="level-grid" id="mpInGameLevelGrid" aria-label="Choose a multiplayer level"></div>
+      <div class="level-select-actions mp-room-actions">
+        <button id="mpChangeLevelBtn" class="btn candy-wrap candy-wrap--mint">Play Selected Level</button>
+        <button id="mpCloseLevelBtn" class="btn btn-ghost">Back</button>
+      </div>
+    </div>
+  </div>
+
   <div id="pauseScreen" class="screen hidden">
     <div class="title" style="font-size:2.2rem;">Paused</div>
     <div class="pause-actions">
@@ -357,9 +377,10 @@
       <button id="restartLevelBtn" class="btn btn-ghost">Restart Level</button>
       <button id="pauseControllerBtn" class="btn btn-ghost">🎮 Controller settings</button>
       <button id="pauseKeyboardBtn" class="btn btn-ghost">⌨ Key bind settings</button>
+      <button id="pauseFullscreenBtn" class="btn btn-ghost">⛶ Fullscreen</button>
       <button id="quitBtn" class="btn btn-ghost">Quit to Menu</button>
     </div>
-    <p class="controller-help">Stick / D-pad: navigate · bottom face button: choose · right face button: back.<br>During play: bottom face button jumps, top face button retries, Start / Options / + pauses. Custom bindings override these.</p>
+    <p class="controller-help">Stick / D-pad: navigate · bottom face button: choose · right face button: back.<br>During play: bottom face button jumps, left face button pushes nearby players, top face button retries, Start / Options / + pauses. Custom bindings override these.</p>
   </div>
 
   <div id="keyboardScreen" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="keyboardTitle">
@@ -406,7 +427,10 @@
       <button id="btnLeft" class="touch-btn" aria-label="Move left">◀</button>
       <button id="btnRight" class="touch-btn" aria-label="Move right">▶</button>
     </div>
-    <button id="btnJump" class="touch-btn touch-jump" aria-label="Jump">⤴</button>
+    <div class="touch-actions">
+      <button id="btnPush" class="touch-btn touch-push" aria-label="Push another player">✋</button>
+      <button id="btnJump" class="touch-btn touch-jump" aria-label="Jump">⤴</button>
+    </div>
   </div>
 </div>
 
@@ -1153,6 +1177,39 @@ window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', resize);
 resize();
 
+function fullscreenActive() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function syncFullscreenButtons() {
+  const active = fullscreenActive();
+  for (const id of ['menuFullscreenBtn','pauseFullscreenBtn']) {
+    const button = document.getElementById(id);
+    button.textContent = active ? '⛶ Exit fullscreen' : '⛶ Fullscreen';
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  }
+  const hudButton = document.getElementById('hudFullscreenBtn');
+  hudButton.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Enter fullscreen');
+  hudButton.title = active ? 'Exit fullscreen' : 'Fullscreen';
+}
+async function toggleFullscreen() {
+  const root = document.getElementById('app');
+  try {
+    if (!fullscreenActive()) {
+      const request = root.requestFullscreen || root.webkitRequestFullscreen;
+      if (!request) { showDeathFlash('FULLSCREEN IS NOT SUPPORTED HERE'); return false; }
+      await request.call(root);
+    } else {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) await exit.call(document);
+    }
+    syncFullscreenButtons(); resize(); return true;
+  } catch (e) { showDeathFlash('FULLSCREEN WAS BLOCKED'); return false; }
+}
+for (const id of ['menuFullscreenBtn','pauseFullscreenBtn','hudFullscreenBtn']) document.getElementById(id).addEventListener('click', toggleFullscreen);
+if (document.addEventListener) {
+  document.addEventListener('fullscreenchange', () => { syncFullscreenButtons(); resize(); });
+  document.addEventListener('webkitfullscreenchange', () => { syncFullscreenButtons(); resize(); });
+}
+syncFullscreenButtons();
+
 if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) document.body.classList.add('touch');
 
 function aabb(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
@@ -1182,8 +1239,8 @@ function mergeInputs(allowJump = true) {
   input.right = keyboardInput.right || touchInput.right || controllerInput.right;
   input.jump = jump;
 }
-const KEY_ACTIONS={left:'Move left',right:'Move right',jump:'Jump',retry:'Retry level / checkpoint',pause:'Pause / Resume'};
-const defaultKeyBindings=()=>({left:['arrowleft','a'],right:['arrowright','d'],jump:['arrowup','w',' '],retry:['r'],pause:['p']});
+const KEY_ACTIONS={left:'Move left',right:'Move right',jump:'Jump',push:'Push player',retry:'Retry level / checkpoint',pause:'Pause / Resume'};
+const defaultKeyBindings=()=>({left:['arrowleft','a'],right:['arrowright','d'],jump:['arrowup','w',' '],push:['e'],retry:['r'],pause:['p']});
 let keyBindings=defaultKeyBindings(),keyCapture=null,keyCaptureToken=0;
 const keyName=key=>({' ':'Space',arrowleft:'←',arrowright:'→',arrowup:'↑',arrowdown:'↓'}[key]||key.toUpperCase());
 const bindableKey=key=>typeof key==='string'&&(key.length===1||['arrowleft','arrowright','arrowup','arrowdown','home','end','pageup','pagedown'].includes(key));
@@ -1202,7 +1259,7 @@ function renderKeyBindings(){
     btn.addEventListener('click',()=>startKeyBinding(action));list.appendChild(btn);
   }
   const legend=document.getElementById('keyboardLegend');
-  legend.textContent=keyBindings.left.map(keyName).join('/')+' / '+keyBindings.right.map(keyName).join('/')+' move · '+keyBindings.jump.map(keyName).join('/')+' jump · '+keyBindings.retry.map(keyName).join('/')+' retry · '+keyBindings.pause.map(keyName).join('/')+' / Esc pause';
+  legend.textContent=keyBindings.left.map(keyName).join('/')+' / '+keyBindings.right.map(keyName).join('/')+' move · '+keyBindings.jump.map(keyName).join('/')+' jump · '+keyBindings.push.map(keyName).join('/')+' push · '+keyBindings.retry.map(keyName).join('/')+' retry · '+keyBindings.pause.map(keyName).join('/')+' / Esc pause';
 }
 function saveKeyBindings(){try{localStorage.setItem('gumdropKeyboard:v1',JSON.stringify(keyBindings));}catch(e){document.getElementById('keyboardCapture').textContent='Keys applied, but browser storage is unavailable.';}}
 function cancelKeyBinding(){keyCapture=null;keyCaptureToken++;document.getElementById('keyboardCancelBtn').classList.add('hidden');document.getElementById('keyboardCapture').textContent='Choose an action to change its key.';}
@@ -1263,6 +1320,7 @@ window.addEventListener('keydown', e => {
     heldKeys.add(key); updateKeyboardInput(); e.preventDefault();
   }
   else if (keyBindings.retry.includes(key) && !e.repeat) { if (state.mode === 'playing' || state.mode === 'dying') {e.preventDefault();restartLevel();} }
+  else if (keyBindings.push.includes(key) && !e.repeat) { if (state.mode === 'playing') { e.preventDefault(); tryPushPlayer(); } }
   else if ((key === 'escape' || keyBindings.pause.includes(key)) && !e.repeat) { e.preventDefault();togglePause(); }
 });
 window.addEventListener('keyup', e => {
@@ -1281,14 +1339,15 @@ function bindTouchBtn(el, onDown, onUp) {
 for (const [id, action] of [['btnLeft','left'],['btnRight','right'],['btnJump','jump']]) {
   bindTouchBtn(document.getElementById(id), () => { touchInput[action] = true; mergeInputs(); }, () => { touchInput[action] = false; mergeInputs(); });
 }
+document.getElementById('btnPush').addEventListener('pointerdown', e => { e.preventDefault(); tryPushPlayer(); });
 
 /* ---------- controllers: browser-standard layout + per-device remapping ---------- */
-const CONTROLLER_ACTIONS = {left:'Move left',right:'Move right',up:'Menu up',down:'Menu down',jump:'Jump / Choose',back:'Menu back',pause:'Pause / Resume',retry:'Retry level'};
+const CONTROLLER_ACTIONS = {left:'Move left',right:'Move right',up:'Menu up',down:'Menu down',jump:'Jump / Choose',push:'Push player',back:'Menu back',pause:'Pause / Resume',retry:'Retry level'};
 const controller = { index:null, key:'', devices:'', pad:null, previous:{}, neutral:true, deadzone:.25,
   bindings:null, capture:null, screen:null, focus:null, direction:'', repeatAt:0, apiError:'', pageFocused:true, pauseOnRespawn:false };
 function defaultControllerBindings() {
   const button = index => ({type:'button',index}), axis = (index,sign) => ({type:'axis',index,sign});
-  return {left:[axis(0,-1),button(14)],right:[axis(0,1),button(15)],up:[axis(1,-1),button(12)],down:[axis(1,1),button(13)],jump:[button(0)],back:[button(1)],pause:[button(9)],retry:[button(3)]};
+  return {left:[axis(0,-1),button(14)],right:[axis(0,1),button(15)],up:[axis(1,-1),button(12)],down:[axis(1,1),button(13)],jump:[button(0)],push:[button(2)],back:[button(1)],pause:[button(9)],retry:[button(3)]};
 }
 function readGamepads() {
   try {
@@ -1391,7 +1450,7 @@ function closeControllerSettings() {
   controllerFocus(null); controller.screen = null;
 }
 function activeControllerScreen() {
-  return ['keyboardScreen','controllerScreen','pauseScreen','victoryScreen','levelSelectScreen','multiplayerScreen','startScreen']
+  return ['keyboardScreen','controllerScreen','pauseScreen','victoryScreen','mpLevelScreen','levelSelectScreen','multiplayerScreen','startScreen']
     .map(id => document.getElementById(id)).find(el => !el.classList.contains('hidden'));
 }
 function controllerMenuBack(screen) {
@@ -1399,6 +1458,7 @@ function controllerMenuBack(screen) {
   if (screen.id === 'controllerScreen') closeControllerSettings();
   else if (screen.id === 'pauseScreen') togglePause();
   else if (screen.id === 'levelSelectScreen') document.getElementById('closeLevelSelectBtn').click();
+  else if (screen.id === 'mpLevelScreen') document.getElementById('mpCloseLevelBtn').click();
   else if (screen.id === 'multiplayerScreen') mpLeave();
 }
 function navigateControllerMenu(screen, direction) {
@@ -1457,7 +1517,7 @@ function pollController(ts) {
     controllerInput.left = controllerInput.right = controllerInput.jump = false; mergeInputs(false);
     if (controller.screen !== screen) {
       controller.screen = screen; controller.direction = '';
-      const defaultIds = {startScreen:'startBtn',pauseScreen:'resumeBtn',keyboardScreen:'keyboardCloseBtn',controllerScreen:'controllerSelect',levelSelectScreen:'closeLevelSelectBtn',multiplayerScreen:'mpCreateBtn',victoryScreen:'playAgainBtn'};
+      const defaultIds = {startScreen:'startBtn',pauseScreen:'resumeBtn',keyboardScreen:'keyboardCloseBtn',controllerScreen:'controllerSelect',levelSelectScreen:'closeLevelSelectBtn',mpLevelScreen:'mpChangeLevelBtn',multiplayerScreen:'mpCreateBtn',victoryScreen:'playAgainBtn'};
       const preferred = document.getElementById(defaultIds[screen.id]);
       controllerFocus(preferred && !preferred.disabled && preferred.getClientRects().length ? preferred : null);
     }
@@ -1476,7 +1536,9 @@ function pollController(ts) {
     else if (pressed('retry') && (state.mode === 'playing' || state.mode === 'dying')) { restartLevel(); resetInputSources(); }
     else {
       controllerInput.left = actions.left; controllerInput.right = actions.right; controllerInput.jump = actions.jump;
-      if (pressed('jump')) ensureAudio(); mergeInputs();
+      if (pressed('jump')) ensureAudio();
+      if (pressed('push')) tryPushPlayer();
+      mergeInputs();
     }
   }
   controller.previous = actions;
@@ -1698,7 +1760,9 @@ function savePlayerName() {
 }
 let menuDifficulty = 'hard', modeMenuRequest = 0, checkpointNoticeToken = 0;
 let player = {};
-const mp = { ws:null, id:null, room:null, host:false, connected:false, started:false, supportsModes:false, difficulty:'hard', lastSend:0, completedLevel:null, remotes:{} };
+const mp = { ws:null, id:null, room:null, host:false, connected:false, started:false, supportsModes:false, supportsLevelChange:false, difficulty:'hard', lastSend:0, completedLevel:null, remotes:{} };
+let lastPushAt = -Infinity;
+let pendingMpLevel = 1;
 
 function resetPlayer(x, y) {
   player = { x, y, vx: 0, vy: 0, w: PLAYER_W, h: PLAYER_H, onGround: false, wasOnGround: false,
@@ -1714,6 +1778,9 @@ function mpDifficultyHelp() {
 function mpShowRoom(show) {
   document.getElementById('mpRoomCode').classList.toggle('hidden', !show);
   document.getElementById('mpPlayers').classList.toggle('hidden', !show);
+}
+function updateMpLevelButton() {
+  document.getElementById('mpInGameLevelBtn').classList.toggle('hidden', !(mp.connected && mp.started && mp.host && mp.supportsLevelChange));
 }
 function mpRenderPlayers(players) {
   const self = players.find(p => p.id === mp.id);
@@ -1749,6 +1816,7 @@ function mpConnect(action, roomCode) {
     let msg; try { msg = JSON.parse(e.data); } catch(e) { return; }
     if (msg.type === 'welcome') {
       mp.supportsModes = msg.supportsModes === true;
+      mp.supportsLevelChange = msg.supportsLevelChange === true;
       mp.difficulty = mp.supportsModes && msg.difficulty === 'easy' ? 'easy' : 'hard';
       document.getElementById('mpDifficultySelect').value = mp.difficulty;
       document.getElementById('mpDifficultySelect').disabled = false;
@@ -1759,6 +1827,7 @@ function mpConnect(action, roomCode) {
       document.getElementById('mpLevelPicker').classList.toggle('hidden', !mp.host || mp.started);
       mpSetStatus(mp.started ? `${mp.difficulty === 'easy' ? 'Easy' : 'Hard'} mode — level ${msg.level}` : (!mp.supportsModes ? 'This older server supports Hard mode only. Use the updated server for Easy rooms.' : (mp.host ? 'Choose the room mode and share your code.' : 'Waiting for the host to choose a mode and start…')));
       mpShowRoom(true); mpRenderPlayers(msg.players || []);
+      updateMpLevelButton();
       if (!msg.supportsUniqueSprites) mpSetStatus('Update and restart the server from the new ZIP to reserve unique candy sprites.');
       if (msg.started) mpStartLevel(msg.level);
     } else if (msg.type === 'players') {
@@ -1766,10 +1835,17 @@ function mpConnect(action, roomCode) {
       if (msg.started !== undefined) mp.started = !!msg.started;
       const self = (msg.players || []).find(p => p.id === mp.id);
       if (self) mp.host = !!self.host;
+      updateMpLevelButton();
       document.getElementById('mpStartBtn').classList.toggle('hidden', !mp.host || mp.started);
       document.getElementById('mpLevelPicker').classList.toggle('hidden', !mp.host || mp.started);
     } else if (msg.type === 'start') { mp.difficulty = mp.supportsModes && msg.difficulty === 'easy' ? 'easy' : 'hard'; mp.started = true; mpSetStatus(`Everyone is on level ${msg.level} — ${mp.difficulty} mode`); mpStartLevel(msg.level); }
-    else if (msg.type === 'playerUpdate') { if (msg.id !== mp.id) mp.remotes[msg.id] = { ...msg, targetX:msg.x, targetY:msg.y }; }
+    else if (msg.type === 'playerUpdate') { if (msg.id !== mp.id) mpReceivePlayerUpdate(msg); }
+    else if (msg.type === 'pushed') {
+      player.vx = Number(msg.vx) || 0; player.vy = Number(msg.vy) || -4;
+      player.onGround = false; player.groundRef = null; player.iceBoost = false;
+      player.squash = 1.35; spawnParticles('bounce', player.x + player.w / 2, player.y + player.h / 2); sfxBounce();
+      showDeathFlash('SHOVED!');
+    }
     else if (msg.type === 'playerLeave') { delete mp.remotes[msg.id]; }
     else if (msg.type === 'waiting') { mpSetStatus(`Waiting for teammates: ${msg.completed}/${msg.total} finished`); }
     else if (msg.type === 'nextLevel') { mp.completedLevel = null; mp.difficulty = mp.supportsModes && msg.difficulty === 'easy' ? 'easy' : 'hard'; mpSetStatus(`Level ${msg.level}`); mpStartLevel(msg.level); }
@@ -1782,28 +1858,99 @@ function mpConnect(action, roomCode) {
 function mpStartLevel(n) {
   state.difficulty = mp.difficulty;
   document.getElementById('multiplayerScreen').classList.add('hidden');
+  document.getElementById('mpLevelScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   state.deaths = 0; state.furthestLevel = Math.max(state.furthestLevel, n); loadLevel(n); updateHUD(); state.mode = 'playing';
   document.getElementById('mpBadge').classList.remove('hidden'); document.getElementById('mpBadge').textContent = `👥 ${Object.keys(mp.remotes).length + 1}`;
+  updateMpLevelButton();
   ensureAudio();
 }
 function mpSend(obj) { if (mp.ws && mp.connected && mp.ws.readyState === WebSocket.OPEN) mp.ws.send(JSON.stringify(obj)); }
 function mpLeave() {
   hideCheckpointNotice();
   if (mp.ws) { try { mp.ws.close(); } catch(e){} }
-  mp.ws = null; mp.connected = false; mp.started = false; mp.id = null; mp.room = null; mp.host = false; mp.remotes = {}; mp.completedLevel = null;
+  mp.ws = null; mp.connected = false; mp.started = false; mp.id = null; mp.room = null; mp.host = false; mp.supportsLevelChange = false; mp.remotes = {}; mp.completedLevel = null;
   document.querySelectorAll('.sprite-choice').forEach(choice => { choice.disabled = false; });
   document.getElementById('mpBadge').classList.add('hidden');
+  document.getElementById('mpInGameLevelBtn').classList.add('hidden');
+  document.getElementById('mpLevelScreen').classList.add('hidden');
   document.getElementById('multiplayerScreen').classList.add('hidden'); document.getElementById('startScreen').classList.remove('hidden');
   state.mode = 'menu'; state.runToken++; state.difficulty = menuDifficulty; refreshModeMenu();
 }
+const MP_INTERPOLATION_DELAY = 70;
+const MP_MAX_PREDICTION_FRAMES = 4;
+function mpReceivePlayerUpdate(msg) {
+  const x = Number(msg.x), y = Number(msg.y), vx = Number(msg.vx) || 0, vy = Number(msg.vy) || 0;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  let r = mp.remotes[msg.id];
+  if (!r) r = mp.remotes[msg.id] = {id:msg.id, x, y, targetX:x, targetY:y, snapshots:[]};
+  if (!Array.isArray(r.snapshots)) r.snapshots = [];
+  const previous = r.snapshots[r.snapshots.length - 1];
+  if (previous && Math.hypot(x - previous.x, y - previous.y) > 240) { r.snapshots.length = 0; r.x = x; r.y = y; }
+  const receivedAt = Math.max(performance.now(), previous ? previous.at + .01 : 0);
+  r.snapshots.push({x,y,vx,vy,at:receivedAt});
+  while (r.snapshots.length > 12) r.snapshots.shift();
+  r.targetX = x; r.targetY = y; r.vx = vx; r.vy = vy;
+  r.facing = Number(msg.facing) || r.facing || 1;
+  if (msg.sprite) r.sprite = msg.sprite;
+  if (msg.name) r.name = msg.name;
+}
 function mpUpdateRemotes(dt) {
+  const renderAt = performance.now() - MP_INTERPOLATION_DELAY;
   for (const r of Object.values(mp.remotes)) {
-    r.x += (r.targetX - r.x) * Math.min(1, .25 * dt); r.y += (r.targetY - r.y) * Math.min(1, .25 * dt);
+    const snapshots = r.snapshots || [];
+    while (snapshots.length > 2 && snapshots[1].at <= renderAt) snapshots.shift();
+    let x = r.targetX, y = r.targetY;
+    if (snapshots.length >= 2 && renderAt >= snapshots[0].at && renderAt <= snapshots[1].at) {
+      const a = snapshots[0], b = snapshots[1];
+      const blend = clamp((renderAt - a.at) / Math.max(.01, b.at - a.at), 0, 1);
+      x = a.x + (b.x - a.x) * blend; y = a.y + (b.y - a.y) * blend;
+    } else if (snapshots.length) {
+      const latest = snapshots[snapshots.length - 1];
+      if (renderAt < latest.at) { x = snapshots[0].x; y = snapshots[0].y; }
+      else {
+        const frames = clamp((renderAt - latest.at) / (1000 / 60), 0, MP_MAX_PREDICTION_FRAMES);
+        x = latest.x + latest.vx * frames;
+        y = latest.y + latest.vy * frames + (Math.abs(latest.vy) > .25 ? .5 * GRAVITY * frames * frames : 0);
+      }
+    }
+    r.x = x; r.y = y;
   }
   document.getElementById('mpBadge')?.classList.toggle('hidden', !mp.connected);
   if (mp.connected) document.getElementById('mpBadge').textContent = `👥 ${Object.keys(mp.remotes).length + 1}`;
+}
+function tryPushPlayer() {
+  if (!mp.connected || !mp.started || state.mode !== 'playing') return false;
+  const now = performance.now(); if (now - lastPushAt < 700) return false;
+  const cx = player.x + player.w / 2, cy = player.y + player.h / 2;
+  let target = null, best = 82;
+  for (const r of Object.values(mp.remotes)) {
+    const dx = r.x + PLAYER_W / 2 - cx, dy = r.y + PLAYER_H / 2 - cy;
+    const distance = Math.hypot(dx, dy);
+    if (distance < best && (Math.sign(dx) === player.facing || Math.abs(dx) < 10)) { target = r; best = distance; }
+  }
+  if (!target) { showDeathFlash('GET CLOSER TO PUSH'); return false; }
+  lastPushAt = now; mpSend({type:'push', targetId:target.id});
+  player.vx -= player.facing * 1.8; player.squash = .82;
+  showDeathFlash('PUSH!'); return true;
+}
+function resolveMultiplayerCollisions() {
+  if (!mp.connected || !mp.started) return;
+  for (const r of Object.values(mp.remotes)) {
+    const other = {x:r.x,y:r.y,w:PLAYER_W,h:PLAYER_H};
+    if (!aabb(player, other)) continue;
+    const overlapLeft = player.x + player.w - other.x, overlapRight = other.x + other.w - player.x;
+    const overlapTop = player.y + player.h - other.y, overlapBottom = other.y + other.h - player.y;
+    const minX = Math.min(overlapLeft, overlapRight), minY = Math.min(overlapTop, overlapBottom);
+    if (minY < minX) {
+      if (player.y < other.y) { player.y -= overlapTop; if (player.vy >= 0) { player.vy = 0; player.onGround = true; player.coyote = COYOTE_FRAMES; } }
+      else { player.y += overlapBottom; if (player.vy < 0) player.vy = 0; }
+    } else {
+      if (player.x < other.x) player.x -= overlapLeft; else player.x += overlapRight;
+      if ((player.x < other.x && player.vx > 0) || (player.x > other.x && player.vx < 0)) player.vx = 0;
+    }
+  }
 }
 function drawExtraCandy(sprite) {
   if (sprite === 'peppermint') {
@@ -2196,6 +2343,7 @@ function updatePlayer(dt) {
   }
   if (player.onGround) { player.coyote = COYOTE_FRAMES; player.groundRef = newGroundRef; player.doubleJumpReady = state.activePower === 'doubleJump'; }
   player.wasOnGround = player.onGround;
+  resolveMultiplayerCollisions();
   player.squash += (1 - player.squash) * Math.min(1, 0.25 * dt);
 
   for(const c of lvl.crushers||[]){if(crusherHitsPlayer(c,beforeCrusherStep,player)){die();return;}}
@@ -2729,7 +2877,12 @@ function updateHUD() {
   document.getElementById('levelNum').textContent = state.levelNum;
   document.getElementById('zoneLabel').textContent = TIERS[state.level.tier].name + ' · ' + (state.level.featureName || TIERS[state.level.tier].label);
   document.getElementById('deathCount').textContent = state.deaths;
-  document.getElementById('progressFill').style.width = state.levelNum + '%';
+  const levelStartX = state.level.start.x + player.w / 2;
+  const levelFinishX = state.level.goal.x;
+  const levelProgress = clamp((player.x + player.w / 2 - levelStartX) / Math.max(1, levelFinishX - levelStartX), 0, 1);
+  const levelProgressPercent = Math.round(levelProgress * 100);
+  document.getElementById('progressFill').style.width = levelProgressPercent + '%';
+  document.getElementById('levelProgressTrack').setAttribute('aria-valuenow', levelProgressPercent);
   const badge = document.getElementById('powerBadge');
   if (state.activePower) badge.textContent = POWER_INFO[state.activePower].icon + ' ' + POWER_INFO[state.activePower].hint;
   else if (state.level.requiredPower) badge.textContent = 'Find ' + POWER_INFO[state.level.requiredPower].name;
@@ -2869,6 +3022,27 @@ document.getElementById('muteBtn').addEventListener('click', (e) => {
   if (!muted) musicScheduler();
 });
 document.getElementById('pauseBtn').addEventListener('click', togglePause);
+function selectMpLevel(level) {
+  pendingMpLevel = Math.max(1, Math.min(100, Number(level) || 1));
+  document.getElementById('mpInGameLevelGrid').querySelectorAll('.level-choice').forEach(button => button.classList.toggle('current', Number(button.dataset.level) === pendingMpLevel));
+  document.getElementById('mpChangeLevelBtn').textContent = `Play Level ${pendingMpLevel}`;
+}
+function openMpLevelScreen() {
+  if (!mp.connected || !mp.started || !mp.host || !mp.supportsLevelChange || state.mode !== 'playing') return;
+  resetInputSources(); state.mode = 'mpLevelMenu'; selectMpLevel(state.levelNum);
+  document.getElementById('mpLevelScreen').classList.remove('hidden'); controller.screen = null;
+  controllerFocus(Array.from(document.getElementById('mpInGameLevelGrid').children).find(button => Number(button.dataset.level) === pendingMpLevel) || document.getElementById('mpChangeLevelBtn'));
+}
+function closeMpLevelScreen() {
+  document.getElementById('mpLevelScreen').classList.add('hidden'); controllerFocus(null); controller.screen = null;
+  if (state.mode === 'mpLevelMenu') state.mode = 'playing';
+}
+document.getElementById('mpInGameLevelBtn').addEventListener('click', openMpLevelScreen);
+document.getElementById('mpCloseLevelBtn').addEventListener('click', closeMpLevelScreen);
+document.getElementById('mpChangeLevelBtn').addEventListener('click', () => {
+  if (!mp.connected || !mp.started || !mp.host || !mp.supportsLevelChange) { closeMpLevelScreen(); return; }
+  mpSend({type:'changeLevel', level:pendingMpLevel});
+});
 document.getElementById('resumeBtn').addEventListener('click', togglePause);
 document.getElementById('restartLevelBtn').addEventListener('click', restartLevel);
 document.getElementById('quitBtn').addEventListener('click', () => {
@@ -2927,10 +3101,15 @@ document.getElementById('mpRoomInput').addEventListener('keydown', e => { if (e.
   try { selectedPlayerName = cleanPlayerName(localStorage.getItem('gumdropPlayerName')); } catch (e) {}
   document.getElementById('mpNameInput').value = selectedPlayerName;
   const multiplayerLevelSelect = document.getElementById('mpLevelSelect');
+  const multiplayerInGameGrid = document.getElementById('mpInGameLevelGrid');
   for (let level = 1; level <= 100; level++) {
     const option = document.createElement('option');
     option.value = level; option.textContent = `Level ${level} — ${TIERS[Math.floor((level - 1) / 10)].name}`;
     multiplayerLevelSelect.appendChild(option);
+    const levelButton = document.createElement('button');
+    levelButton.className = 'level-choice unlocked'; levelButton.dataset.level = level;
+    levelButton.textContent = level; levelButton.title = `Level ${level} — ${TIERS[Math.floor((level - 1) / 10)].name}`;
+    levelButton.addEventListener('click', () => selectMpLevel(level)); multiplayerInGameGrid.appendChild(levelButton);
   }
   try {
     const savedSprite = localStorage.getItem('gumdropSprite');
@@ -2959,7 +3138,7 @@ function loop(ts) {
   updateCamera(dt);
   updateParticles(dt);
   mpUpdateRemotes(dt);
-  if (mp.connected && mp.started && state.mode === 'playing' && ts - mp.lastSend > 60) {
+  if (mp.connected && mp.started && state.mode === 'playing' && ts - mp.lastSend > 32) {
     mp.lastSend = ts; mpSend({ type:'playerUpdate', x:player.x, y:player.y, vx:player.vx, vy:player.vy, facing:player.facing, sprite:selectedSprite, name:selectedPlayerName });
   }
   render();

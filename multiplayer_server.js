@@ -173,6 +173,10 @@ wss.on('connection', ws => {
         room: code,
         name: cleanName(msg.name),
         sprite,
+        x: 0,
+        y: 0,
+        facing: 1,
+        lastPushAt: 0,
       };
 
       room.players.set(id, player);
@@ -189,6 +193,7 @@ wss.on('connection', ws => {
         difficulty: room.difficulty,
         supportsModes: true,
         supportsUniqueSprites: true,
+        supportsLevelChange: true,
         players: roomPlayers(room),
       });
       broadcastPlayers(room);
@@ -236,7 +241,44 @@ wss.on('connection', ws => {
       return;
     }
 
+    if (msg.type === 'changeLevel') {
+      if (current.id !== room.hostId || !room.started) {
+        send(ws, { type: 'error', message: 'Only the host can change levels during a game.' });
+        return;
+      }
+
+      room.level = Math.max(1, Math.min(100, Number(msg.level) || 1));
+      room.completions.clear();
+      broadcast(room, {
+        type: 'nextLevel',
+        level: room.level,
+        difficulty: room.difficulty,
+      });
+      return;
+    }
+
+    if (msg.type === 'push') {
+      if (!room.started) return;
+      const now = Date.now();
+      if (now - current.lastPushAt < 600) return;
+
+      const target = room.players.get(String(msg.targetId || ''));
+      if (!target || target.id === current.id) return;
+
+      const dx = target.x - current.x;
+      const dy = target.y - current.y;
+      if (Math.hypot(dx, dy) > 120) return;
+
+      current.lastPushAt = now;
+      const direction = Math.sign(dx) || current.facing || 1;
+      send(target.ws, { type: 'pushed', vx: direction * 7, vy: -5 });
+      return;
+    }
+
     if (msg.type === 'playerUpdate') {
+      current.x = Number(msg.x) || 0;
+      current.y = Number(msg.y) || 0;
+      current.facing = Number(msg.facing) || 1;
       const safe = {
         type: 'playerUpdate',
         id: current.id,
